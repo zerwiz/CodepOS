@@ -36,7 +36,7 @@ team name *args:
     fi
 
 security:
-    bun run .pi/multi-team/teams/security/index.mjs
+    @bun run .pi/multi-team/teams/security/index.mjs
 
 # =========================
 # ORCHESTRATION
