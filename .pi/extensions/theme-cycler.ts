@@ -283,9 +283,12 @@ let currentThemeIndex = 0;
  * Update status bar with current theme info
  */
 function updateStatus(ctx: ExtensionContext, themeName: string): void {
-  if (!ctx.hasUI) return;
+  if (!ctx?.hasUI) return;
 
-  const swatch = `\n  🎨 Theme: ${themeName}`;
+  try {
+    ctx.ui.setTheme(themeName);
+  } catch {}
+
   ctx.ui.setStatus("theme", `${themeName}`);
 }
 
@@ -507,39 +510,29 @@ export default function (pi: ExtensionAPI): void {
     }
   });
 
-  // Keyboard shortcuts - Ctrl+Left/Right for theme cycling
-  pi.on("key_press", async (event, ctx) => {
-    if (!ctx.hasUI) return;
-
-    const key = event.key;
-
-    // Ctrl + Left: Previous theme
-    if (key === "ArrowLeft" && event.ctrlKey) {
-      const result = cycleTheme(ctx, "prev");
-      ctx.ui.notify(result, "info");
-    }
-
-    // Ctrl + Right: Next theme
-    if (key === "ArrowRight" && event.ctrlKey) {
-      const result = cycleTheme(ctx, "next");
-      ctx.ui.notify(result, "info");
-    }
-
-    // Ctrl + Space: Random theme
-    if (key === " " && event.ctrlKey) {
-      const result = cycleTheme(ctx, "next");
-      const randomIndex = Math.floor(Math.random() * THEMES.length);
-      THEMES[randomIndex];
-      currentThemeIndex = randomIndex;
-      updateStatus(ctx, THEMES[randomIndex].name);
-      showSwatch(ctx, THEMES[randomIndex]);
-      ctx.ui.notify(`Random theme: ${THEMES[randomIndex].name}`, "info");
-    }
+  pi.registerShortcut("ctrl+'", {
+    description: "Next theme",
+    handler: async (ctx) => {
+      if (!ctx.hasUI) return;
+      const themes = ctx.ui.getAllThemes();
+      const current = ctx.ui.theme.name;
+      const idx = themes.findIndex((t) => t.name === current);
+      const next = themes[(idx + 1) % themes.length];
+      ctx.ui.setTheme(next.name);
+      ctx.ui.notify(`Theme: ${next.name}`, "info");
+    },
   });
 
-  // Session shutdown - cleanup
-  pi.on("session_shutdown", async () => {
-    // Cleanup on shutdown
-    // Optionally persist theme choice to a file
+  pi.registerShortcut("ctrl+;", {
+    description: "Previous theme",
+    handler: async (ctx) => {
+      if (!ctx.hasUI) return;
+      const themes = ctx.ui.getAllThemes();
+      const current = ctx.ui.theme.name;
+      const idx = themes.findIndex((t) => t.name === current);
+      const prev = themes[(idx - 1 + themes.length) % themes.length];
+      ctx.ui.setTheme(prev.name);
+      ctx.ui.notify(`Theme: ${prev.name}`, "info");
+    },
   });
 }

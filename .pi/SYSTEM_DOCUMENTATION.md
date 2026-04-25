@@ -1,5 +1,219 @@
 
 ---
+title: CodepOS Agent Architecture
+---
+
+## Three Core Concepts
+
+### 1. Scanners
+Fast scripts for deterministic analysis. No AI - just file reading, pattern matching, reporting.
+
+### 2. Agents
+**Real LLM-powered agents** using @tintinweb/pi-subagents. They can:
+- Reason using LLM (Claude, GPT, etc.)
+- Use tools (read, write, bash, edit)
+- Make autonomous decisions
+- Complete complex tasks
+
+### 3. Teams
+Collections of scanners and/or agents working together on a goal.
+
+---
+
+## Scanner Directory
+`.pi/multi-team/tools/`
+
+Quick analysis scripts:
+- `scout.mjs` - File counting, structure
+- `sentinel.mjs` - Security pattern scanning
+- `librarian.mjs` - Documentation discovery
+- `mapper.mjs` - Architecture mapping
+
+```bash
+bun run .pi/multi-team/tools/scout.mjs
+```
+
+---
+
+## Agent Directory
+`.pi/agents/` (pi-subagents format)
+
+Real LLM agents defined as Markdown files:
+
+`.pi/agents/council.md`:
+```yaml
+---
+description: Team Coordinator
+model: claude-sonnet-4
+thinking: high
+tools: read, bash, grep, write, edit
+---
+
+You coordinate the CodepOS multi-team system...
+```
+
+`.pi/agents/auditor.md`:
+```yaml
+---
+description: Security Auditor
+tools: read, grep, bash
+model: haiku
+---
+
+You review code for vulnerabilities...
+```
+
+### Install pi-subagents
+```bash
+pi install npm:@tintinweb/pi-subagents
+```
+
+### Spawn an Agent
+```javascript
+Agent({
+  subagent_type: "auditor",
+  prompt: "Review auth module for SQL injection",
+  description: "Security review"
+})
+```
+
+---
+
+## Team Directory
+`.pi/multi-team/teams/`
+
+Teams combine scanners and agents:
+
+`.pi/multi-team/teams/security/index.mjs`:
+```javascript
+export default {
+  name: "security-team",
+  scanners: ["sentinel"],
+  agents: ["auditor", "fixer"],
+  workflow: async () => {
+    // 1. Run scanner for quick check
+    await runScanner("sentinel");
+    // 2. Spawn agent for deep analysis
+    await Agent({ subagent_type: "auditor", ... });
+    // 3. Spawn agent to fix issues
+    await Agent({ subagent_type: "fixer", ... });
+  }
+};
+```
+
+---
+
+## Execution Flow
+
+```
+User request
+    ↓
+www.pi.dev (main agent)
+    ↓
+.pi/skills/codepos-orchestrator.md
+    ↓
+Teams execute:
+├── Scanners: fast analysis
+├── Agents: LLM reasoning + actions
+└── Results returned to user
+```
+
+---
+
+## Directory Structure
+
+```
+CodepOS/
+├── .pi/
+│   ├── agents/                    # LLM agents (pi-subagents)
+│   │   ├── council.md
+│   │   ├── auditor.md
+│   │   └── explorer.md
+│   ├── multi-team/
+│   │   ├── tools/               # Scanners
+│   │   │   ├── scout.mjs
+│   │   │   ├── sentinel.mjs
+│   │   │   └── librarian.mjs
+│   │   └── teams/               # Team definitions
+│   │       ├── security/
+│   │       ├── ui-gen/
+│   │       └── validation/
+│   ├── skills/                   # pi skill files
+│   └── extensions/               # Custom tools
+└── justfile                      # CLI entry points
+```
+
+---
+
+## Quick Commands
+
+```bash
+# Run scanner directly
+bun run .pi/multi-team/tools/scout.mjs
+
+# Run team (via justfile)
+just team security
+
+# Via pi (with skill loaded)
+pi  # then use Agent() tool
+```
+
+---
+
+## Summary
+
+| Type | Location | Execution | AI |
+|------|----------|-----------|-----|
+| Scanner | `.pi/multi-team/tools/` | bun/node | No |
+| Agent | `.pi/agents/*.md` | pi-subagents | Yes (LLM) |
+| Team | `.pi/multi-team/teams/` | Mixed | Depends |
+
+**Teams can contain both scanners and agents.**
+
+### Converting Scanners to Working Agents
+
+**Before (Scanner):**
+```javascript
+// scout/index.mjs - only reports
+async function report() {
+  const count = await countFiles();
+  console.log(`Found ${count} files`);
+}
+```
+
+**After (Working):**
+```javascript
+// scanner/index.mjs - takes action
+async function execute(task) {
+  const action = task.action; // "find", "remove", "fix"
+  
+  if (action === "remove-duplicates") {
+    const dups = await findDuplicates();
+    for (const dup of dups) {
+      await fs.rm(dup);
+    }
+    return { removed: dups.length };
+  }
+}
+```
+
+### Running Agents via pi.dev
+
+```bash
+# Start pi with project context
+cd /home/zerwiz/CodeP/CodepOS
+pi
+
+# pi loads .pi/skills/codepos-orchestrator.md
+# User can now say: "Run scout to analyze the codebase"
+
+# Or run directly:
+just team scout
+just team sentinel
+just team mapper
+```
+
+---
 
 ## Happy Path Workflow (Example Task)
 

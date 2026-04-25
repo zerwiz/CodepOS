@@ -1,34 +1,42 @@
 # CodepOS Multi-Agent System
 
 # =========================
-# GENERIC TEAM RUNNER
+# SCANNERS (no LLM)
+# =========================
+
+scanner name:
+    @echo "🔍 Running scanner: {{name}}..."
+    @if [ -f ".pi/multi-team/tools/{{name}}.mjs" ]; then \
+        bun run .pi/multi-team/tools/{{name}}.mjs; \
+    else \
+        echo "❌ Scanner '{{name}}' not found"; \
+        exit 1; \
+    fi
+
+scout:
+    bun run .pi/multi-team/tools/scout.mjs
+
+sentinel:
+    bun run .pi/multi-team/tools/sentinel.mjs
+
+# =========================
+# TEAMS (scanners + agents)
 # =========================
 
 team name *args:
     @echo "🚀 Deploying team: {{name}}..."
-    @if [ -f ".pi/multi-team/agents/{{name}}/index.mjs" ]; then \
+    @if [ -f ".pi/multi-team/teams/{{name}}/index.mjs" ]; then \
+        bun run .pi/multi-team/teams/{{name}}/index.mjs {{args}}; \
+    elif [ -f ".pi/multi-team/agents/{{name}}/index.mjs" ]; then \
         bun run .pi/multi-team/agents/{{name}}/index.mjs {{args}}; \
-    elif [ -f ".pi/multi-team/agents/{{name}}.mjs" ]; then \
-        bun run .pi/multi-team/agents/{{name}}.mjs {{args}}; \
     else \
-        echo "❌ Team/Agent '{{name}}' not found"; \
-        echo "Available agents:"; ls .pi/multi-team/agents/; \
+        echo "❌ Team '{{name}}' not found"; \
+        echo "Available teams:"; ls .pi/multi-team/teams/; \
         exit 1; \
     fi
 
-# =========================
-# SINGLE AGENTS
-# =========================
-
-agent name *args:
-    @echo "🤖 Running agent: {{name}}..."
-    @if [ -f ".pi/multi-team/agents/{{name}}/index.mjs" ]; then \
-        bun run .pi/multi-team/agents/{{name}}/index.mjs {{args}}; \
-    else \
-        echo "❌ Agent '{{name}}' not found"; \
-        echo "Available agents:"; ls .pi/multi-team/agents/; \
-        exit 1; \
-    fi
+security:
+    @bun run .pi/multi-team/teams/security/index.mjs
 
 # =========================
 # ORCHESTRATION
