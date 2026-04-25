@@ -1,0 +1,32 @@
+# Security Triggers - When Council Must Intervene
+
+triggers:
+  - name: sensitive_data_access
+    description: "Database queries on sensitive data"
+    action: council_approve
+    severity: high
+
+  - name: external_api
+    description: "External API connections"
+    action: validation_check
+    severity: medium
+
+  - name: auth_required
+    description: "Authentication bypass requests"
+    action: block_until_approved
+    severity: critical
+
+  - name: sql_injection_risk
+    description: "Potential SQL injection detected"
+    action: block_until_fixed
+    severity: critical
+
+  - name: cors_misconfiguration
+    description: "CORS headers misconfigured"
+    action: fix_immediately
+    severity: high
+
+  - name: auth_bypass
+    description: "Authentication bypass attempt"
+    action: block_immediately
+    severity: critical

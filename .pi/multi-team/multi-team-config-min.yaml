@@ -1,0 +1,48 @@
+# pi.dev Multi-Team Minimal Configuration
+# This minimal config provides basic multi-team setup with agent discovery
+
+# Teams definition - hierarchical structure
+teams:
+  /agents/backend:
+    id: "/agents/backend"
+    parent: "/agents"
+    children: []
+
+  /agents/backend/analyzer:
+    id: "/agents/backend/analyzer"
+    parent: "/agents/backend"
+    children:
+      - /agents/backend/analyzer-task
+
+  /agents/backend/testers:
+    id: "/agents/backend/testers"
+    parent: "/agents/backend"
+    children: []
+
+  /agents/backend/reviewers:
+    id: "/agents/backend/reviewers"
+    parent: "/agents/backend"
+    children: []
+
+  /agents/frontend:
+    id: "/agents/frontend"
+    parent: "/agents"
+    children: []
+
+# Global settings
+global:
+  timeout: 30
+  sandbox: true
+  max_agents: 8
+  max_children: 10
+  discovery_enabled: true
+
+# Inventory endpoint
+inventory:
+  endpoint: ".cli/team/{team_name}/__init__.py"
+  cache_ttl: 300
+
+# Sessions and state
+state:
+  sessions_dir: ".pi/multi-team/sessions/"
+  enable: true

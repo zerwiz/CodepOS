@@ -1,0 +1,267 @@
+# Agent Hooks Registry
+# These hooks define what actions agents follow
+
+hooks:
+  # Core Agent Lifecycle Hooks
+  - name: hook-init-agent
+    description: "Initialize agent on startup"
+    priority: 1
+    agents: [all]
+    actions:
+      - Read expertise YAML
+      - Load skills markdown
+      - Read conversation log
+      - Validate configuration
+      - Start idle state
+
+  - name: hook-receive-task
+    description: "Process incoming task"
+    priority: 2
+    agents: [all]
+    actions:
+      - Parse task requirements
+      - Check mental model
+      - Map dependencies
+      - Request clarification if needed
+      - Validate scope
+
+  - name: hook-plan-execution
+    description: "Plan before execution"
+    priority: 3
+    agents: [all]
+    actions:
+      - Break down task
+      - Map file dependencies
+      - Check existing patterns
+      - Create execution plan
+      - Estimate completion time
+
+  - name: hook-execute-task
+    description: "Execute assigned task"
+    priority: 4
+    agents: [all]
+    actions:
+      - Write code files
+      - Create components
+      - Implement logic
+      - Test functionality
+      - Update mental model
+
+  - name: hook-verify-work
+    description: "Verify completed work"
+    priority: 5
+    agents: [all]
+    actions:
+      - Review changes
+      - Validate against requirements
+      - Test functionality
+      - Check for issues
+      - Request review if needed
+
+  - name: hook-deliver-output
+    description: "Deliver completed work"
+    priority: 6
+    agents: [all]
+    actions:
+      - Package output
+      - Create documentation
+      - Update task list
+      - Notify team
+      - Request approval
+
+  # Domain-Specific Hooks
+  - name: hook-vue-component
+    description: "Create Vue SFC component"
+    priority: 10
+    agents: [vue-generator]
+    actions:
+      - Create script setup
+      - Add props/emit
+      - Implement template
+      - Add style
+      - Use shadcn-ui
+
+  - name: hook-react-component
+    description: "Create React component"
+    priority: 11
+    agents: [react-generator]
+    actions:
+      - Create function
+      - Add hooks
+      - Implement state
+      - Add events
+      - Style output
+
+  - name: hook-api-endpoint
+    description: "Create API endpoint"
+    priority: 12
+    agents: [backend-analyzer]
+    actions:
+      - Route definition
+      - Controller logic
+      - Validation
+      - Database interaction
+      - Error handling
+
+  # Skill Enhancement Hooks
+  - name: hook-update-mental-model
+    description: "Update mental model system"
+    priority: 15
+    agents: [parallel-updates]
+    actions:
+      - Discover new pattern
+      - Document rationale
+      - Track dependencies
+      - Notify team
+      - Version increment
+
+  - name: hook-capture-learning
+    description: "Capture learning from work"
+    priority: 16
+    agents: [all]
+    actions:
+      - Review completed task
+      - Document pattern
+      - Update mental model
+      - Share with lead
+      - Sync parallel teams
+
+  # Quality Control Hooks
+  - name: hook-validate-code
+    description: "Validate code quality"
+    priority: 20
+    agents: [analyzer]
+    actions:
+      - Run linters
+      - Check tests
+      - Review patterns
+      - Flag issues
+      - Request fixes
+
+  - name: hook-check-performance
+    description: "Check performance metrics"
+    priority: 21
+    agents: [analyzer]
+    actions:
+      - Measure load times
+      - Check bundle size
+      - Profile memory
+      - Review queries
+      - Optimize where needed
+
+  # Context Management Hooks
+  - name: hook-read-conversation
+    description: "Read conversation context"
+    priority: 25
+    agents: [active-listener]
+    actions:
+      - Read message history
+      - Track context
+      - Note assignments
+      - Validate dependencies
+      - Maintain awareness
+
+  - name: hook-snapshot-context
+    description: "Take context snapshot"
+    priority: 26
+    agents: [all]
+    actions:
+      - Save file state
+      - Capture dependencies
+      - Note running tasks
+      - Document context
+      - Create snapshot
+
+### Hook Priority System
+
+| Priority | Use Case | Description |
+|---------|----------|-------------|
+| 1-5 | Core Lifecycle | Init, receive, plan, execute, verify, deliver |
+| 10-12 | Domain Specific | Vue component, React component, API endpoint |
+| 15-16 | Learning | Update mental model, capture learning |
+| 20-21 | Quality | Validate code, check performance |
+| 25-26 | Context | Read conversation, snapshot context |
+
+### Hook Execution Flow
+
+```
+┌─────────┐
+│  Receive │
+│     Task │
+└────┬─────┘
+     ↓
+┌─────────┐
+│  Plan   │
+│ Execution│
+└────┬─────┘
+     ↓
+┌─────────┐
+│Execute  │
+│   Task  │
+└────┬─────┘
+     ↓
+┌─────────┐
+│ Verify  │
+│   Work  │
+└────┬─────┘
+     ↓
+┌─────────┐
+│  Quality│
+│    Check│
+└────┬─────┘
+     ↓
+┌─────────┐
+│  Update │
+│     Hook│
+└────┬─────┘
+     ↓
+┌─────────┐
+│ Deliver │
+│   Work  │
+└─────┬───┘
+      ↓
+┌─────────┐
+│  Learn  │
+│         │
+│  Context│
+│  Snapshot│
+└─────────┘
+```
+
+### Hook Rules
+
+1. **Execute in Order**: Follow priority order
+2. **Chain Execution**: Each hook triggers next
+3. **Fail Fast**: Abort if step fails
+4. **Log Everything**: Track all hook executions
+5. **Notify Team**: Alert on failures
+6. **Retry Failed**: Retry up to 3 times
+
+### Hook Integration
+
+These hooks integrate with:
+
+- **Agent Stream**: Agents execute hooks in order
+- **Mental Model**: Hooks update patterns
+- **Team Config**: Hooks defined per team
+- **Conversation Log**: Hooks track context
+- **File State**: Hooks operate on files
+
+### Example Hook Trigger
+
+```yaml
+Task: Create login form
+Triggered hooks:
+  1. hook-init-agent (startup)
+  2. hook-receive-task (parse requirements)
+  3. hook-plan-execution (create plan)
+  4. hook-execute-task (create files)
+  5. hook-verify-work (check code)
+  6. hook-update-mental-model (record pattern)
+  7. hook-deliver-output (deliver work)
+  8. hook-read-conversation (read context)
+```
+
+---
+
+Hook system operational

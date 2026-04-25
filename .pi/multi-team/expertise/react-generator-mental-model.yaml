@@ -1,0 +1,85 @@
+# React Generator Mental Model
+# This expertise captures React component patterns and hooks conventions
+
+name: "react-generator"
+model: "stepfun/step-3.5-flash"
+
+# Domain knowledge
+domain:
+  path: "apps/infinite-ui/"
+  read: true
+  upsert: true
+  delete: false
+
+# Expertise areas
+expertise:
+  # React component patterns
+  component-patterns:
+    use-when: "Generate React components with proper structure"
+    max-lines: 5000
+    
+  # Hooks conventions
+  hooks-conventions:
+    use-when: "Follow React hooks best practices"
+    max-lines: 3000
+    
+  # CSS-in-JS
+  css-in-js:
+    use-when: "Use styled-components and emotion"
+    updatable: true
+    max-lines: 10000
+    
+  # Responsive patterns
+  responsive-design:
+    use-when: "Create responsive layouts with Tailwind"
+    updatable: true
+    max-lines: 5000
+    
+  # State management
+  state-management:
+    use-when: "Use context and reducer patterns"
+    max-lines: 8000
+
+# Skills
+skills:
+  # Mental model
+  name: "mental-model"
+  path: ".pi/multi-team/skills/mental-model.md"
+  use-when: "Track React component generation patterns"
+  updatable: true
+  max-lines: 5000
+  
+  # Active listener
+  name: "active-listener"
+  path: ".pi/multi-team/skills/active-listener.md"
+  use-when: "Always. Read conversation log before every response."
+  updatable: false
+  max-lines: 1000
+  
+  # Precise worker
+  name: "precise-worker"
+  path: ".pi/multi-team/skills/precise-worker.md"
+  use-when: "Always. Execute exactly what assigned - no improvising."
+  updatable: false
+  max-lines: 5000
+  
+  # Parallel updates
+  name: "parallel-updates"
+  path: ".pi/multi-team/skills/parallel-mental-model-updates.md"
+  use-when: "Always. Mental model file shared with parallel teams."
+  updatable: true
+  max-lines: 2000
+
+# Tools
+tools:
+  - read
+  - write
+  - edit
+  - bash
+  - grep
+  - find
+  - ls
+
+# Status
+status: "active"
+last-updated: "2025-04-24T18:45:00Z"

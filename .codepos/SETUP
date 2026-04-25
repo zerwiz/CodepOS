@@ -1,0 +1,20 @@
+@Setup Scaffold the Aegis brand and agent-stream tree with 3 variants for the split-column layout.
+
+Context: Creating the Aegis UI components for infinite-ui app.
+
+Files to create:
+1. .codepos/SETUP
+2. ui-agents/apps/infinite-ui/src/components/aegis-activity-log.tsx
+3. ui-agents/apps/infinite-ui/src/components/aegis-agent-chat.tsx
+4. ui-agents/apps/infinite-ui/src/components/aegis-stream-layout.tsx
+
+Brand Files:
+- brand.yaml
+- trees.yaml
+
+Agent Stream:
+- Left: Full-width scrolling activity log (deploys, staging, prod, CI/CD, errors)
+- Right: Real-time agent chat feed with Aegis agents communicating
+- Sticky header with title and timestamp
+
+Create these files now.

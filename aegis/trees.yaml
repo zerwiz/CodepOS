@@ -1,0 +1,40 @@
+# Agent Stream Configuration
+# Aegis Multi-Agent Stream Topology
+slug: agent-stream
+name: Agent Stream
+branches:
+  - name: deploy-stream
+    description: "Deployment monitoring and verification agents"
+    agents:
+      - type: DeployChecker
+        priority: high
+        triggers: ["deploy", "stage", "promote"]
+      - type: PackageMonitor
+        priority: medium
+        triggers: ["artifact-upload", "checksum-verify"]
+  
+  - name: security-monitor
+    description: "Security scanning and threat response agents"
+    agents:
+      - type: Scanner
+        priority: high
+        triggers: ["port-scan", "vuln-check"]
+      - type: Sentinel
+        priority: critical
+        triggers: ["intrusion", "anomaly"]
+      - type: SQLSpecialist
+        priority: high
+        triggers: ["db-query", "migration"]
+
+  - name: incident-response
+    description: "Response automation and coordination agents"
+    agents:
+      - type: Responder
+        priority: high
+        triggers: ["alert", "escalation"]
+      - type: Monitor
+        priority: medium
+        triggers: ["health-check", "metric-thresh"]
+      - type: PackageMonitor
+        priority: medium
+        triggers: ["artifact-check", "supply-chain"]

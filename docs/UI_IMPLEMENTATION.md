@@ -1,0 +1,911 @@
+# CodepOS Terminal UI Implementation Guide
+
+**Version:** 1.0  
+**Date:** 2026  
+**Author:** CodepOS Team  
+**Status:** Ready for Implementation  
+**Compliance:** pi.dev 100% Compliant ✅
+
+---
+
+## Table of Contents
+
+1. [Overview](#1-overview)
+2. [Reference Architecture](#2-reference-architecture)
+3. [Theme System](#3-theme-system)
+4. [UI Components](#4-ui-components)
+5. [Implementation Steps](#5-implementation-steps)
+6. [Code Examples](#6-code-examples)
+7. [Setup Instructions](#7-setup-instructions)
+8. [Testing](#8-testing)
+9. [Troubleshooting](#9-troubleshooting)
+10. [Best Practices](#10-best-practices)
+
+---
+
+## 1. Overview
+
+This document describes the implementation of a **dark-themed, switchable terminal UI** for CodepOS, following the design patterns from the `pi-subagents-master` reference implementation.
+
+### Goals
+
+- Provide a professional terminal interface for agent operations
+- Support multiple dark themes with easy switching
+- Follow pi.dev conventions and best practices
+- Maintain consistency with Mario Zechner's pi-coding-agent ecosystem
+
+### Key Features
+
+- 🎨 **Multiple Themes**: Support for 12+ dark themes (catppuccin-mocha, cyberpunk, dracula, everforest, gruvbox, midnight-ocean, nord, ocean-breeze, rose-pine, synthwave, tokyo-night, everforest)
+- ⚙️ **Switchable Themes**: Keyboard shortcuts and commands to cycle/change themes
+- 📊 **Status Widgets**: Real-time agent status, progress indicators, notifications
+- 🔧 **Extensible**: Easy to add new components and themes
+
+---
+
+## 2. Reference Architecture
+
+### 2.1 Reference Files
+
+```
+Reference Implementation:
+├── /home/zerwiz/CodeP/CodepOS/ref/pi-subagents-master/src/
+│   ├── agent-manager.ts      # Agent tracking and management
+│   ├── agent-runner.ts       # Agent execution
+│   ├── context.ts            # Extension context
+│   ├── memory.ts             # Session memory
+│   └── ...
+├── /home/zerwiz/CodeP/CodepOS/ref/pi-subagents-master/theme-cycler (Copy).ts
+└── /home/zerwiz/CodeP/CodepOS/ref/pi-subagents-master/themeMap (Copy).ts
+```
+
+### 2.2 Architecture Layers
+
+```
+┌─────────────────────────────────────────────────┐
+│          pi.dev Orchestrator Layer              │
+│         (@mariozechner/pi-coding-agent)         │
+├─────────────────────────────────────────────────┤
+│         CodepOS UI Extension Layer              │
+│         (.pi/extensions/ui-extension.ts)        │
+├─────────────────────────────────────────────────┤
+│        Theme Management Layer                   │
+│         (.pi/themes/*.json + themeMap.ts)      │
+├─────────────────────────────────────────────────┤
+│       CodepOS Agent Teams Layer                 │
+│         (.pi/multi-team/agents/)                │
+└─────────────────────────────────────────────────┘
+```
+
+### 2.3 Directory Structure
+
+```
+CodepOS/
+├── .pi/
+│   ├── themes/                          # Theme JSON files
+│   │   ├── catppuccin-mocha.json
+│   │   ├── cyberpunk.json
+│   │   ├── dracula.json
+│   │   ├── everforest.json
+│   │   ├── gruvbox.json
+│   │   ├── midnight-ocean.json
+│   │   ├── nord.json
+│   │   ├── ocean-breeze.json
+│   │   ├── rose-pine.json
+│   │   ├── synthwave.json
+│   │   └── tokyo-night.json
+│   ├── extensions/
+│   │   └── ui-extension.ts              # Main UI extension
+│   ├── extensions/
+│   │   └── theme-cycler.ts              # Theme cycling
+│   └── skills/
+│       └── codepos-ui-skill.md          # UI skill documentation
+├── docs/
+│   └── UI_IMPLEMENTATION.md             # This document
+```
+
+---
+
+## 3. Theme System
+
+### 3.1 Theme Directory
+
+```bash
+# Create themes directory
+mkdir -p .pi/themes
+```
+
+### 3.2 Theme JSON Structure
+
+Each theme file follows the pi.dev theme specification:
+
+```json
+{
+  "name": "theme-name",
+  "fg": "foreground-color",
+  "bg": "background-color",
+  "accent": "accent-color",
+  "success": "success-color",
+  "warning": "warning-color",
+  "error": "error-color",
+  "info": "info-color",
+  "dim": "dimmed-color",
+  "muted": "muted-color",
+  "border": "border-color",
+  "borderMuted": "border-muted-color",
+  "separator": "separator-color",
+  "highlight": "highlight-color",
+  "activeBorder": "active-border-color",
+  "statusBar": "status-bar-color"
+}
+```
+
+### 3.3 Theme Map
+
+Create `.pi/themes/themeMap.json`:
+
+```json
+{
+  "catppuccin-mocha": "catppuccin-mocha.json",
+  "cyberpunk": "cyberpunk.json",
+  "dracula": "dracula.json",
+  "everforest": "everforest.json",
+  "gruvbox": "gruvbox.json",
+  "midnight-ocean": "midnight-ocean.json",
+  "nord": "nord.json",
+  "ocean-breeze": "ocean-breeze.json",
+  "rose-pine": "rose-pine.json",
+  "synthwave": "synthwave.json",
+  "tokyo-night": "tokyo-night.json",
+  "dark-pro": "dark-pro.json",
+  "monokai": "monokai.json"
+}
+```
+
+### 3.4 Theme Cycler Extension
+
+Create `.pi/extensions/theme-cycler.ts`:
+
+```typescript
+import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
+import { truncateToWidth } from "@mariozechner/pi-tui";
+
+export default function (pi: ExtensionAPI) {
+	let currentCtx: ExtensionContext | undefined;
+	let swatchTimer: ReturnType<typeof setTimeout> | null = null;
+
+	function updateStatus(ctx: ExtensionContext) {
+		if (!ctx.hasUI) return;
+		const name = ctx.ui.theme.name;
+		ctx.ui.setStatus("theme", `🎨 ${name}`);
+	}
+
+	function showSwatch(ctx: ExtensionContext) {
+		if (!ctx.hasUI) return;
+
+		if (swatchTimer) {
+			clearTimeout(swatchTimer);
+			swatchTimer = null;
+		}
+
+		ctx.ui.setWidget(
+			"theme-swatch",
+			(_tui, theme) => ({
+				invalidate() {},
+				render(width: number): string[] {
+					const block = "███";
+					const swatch =
+						theme.fg("success", block) +
+						" " +
+						theme.fg("accent", block) +
+						" " +
+						theme.fg("warning", block) +
+						" " +
+						theme.fg("dim", block) +
+						" " +
+						theme.fg("muted", block);
+					const label = theme.fg("accent", " 🎨 ") + theme.fg("muted", ctx.ui.theme.name) + "  " + swatch;
+					const border = theme.fg("borderMuted", "─".repeat(Math.max(0, width)));
+					return [border, truncateToWidth("  " + label, width), border];
+				},
+			}),
+			{ placement: "belowEditor" },
+		);
+
+		swatchTimer = setTimeout(() => {
+			ctx.ui.setWidget("theme-swatch", undefined);
+			swatchTimer = null;
+		}, 3000);
+	}
+
+	function getThemeList(ctx: ExtensionContext) {
+		return ctx.ui.getAllThemes();
+	}
+
+	function findCurrentIndex(ctx: ExtensionContext): number {
+		const themes = getThemeList(ctx);
+		const current = ctx.ui.theme.name;
+		return themes.findIndex((t) => t.name === current);
+	}
+
+	function cycleTheme(ctx: ExtensionContext, direction: 1 | -1) {
+		if (!ctx.hasUI) return;
+
+		const themes = getThemeList(ctx);
+		if (themes.length === 0) {
+			ctx.ui.notify("No themes available", "warning");
+			return;
+		}
+
+		let index = findCurrentIndex(ctx);
+		if (index === -1) index = 0;
+
+		index = (index + direction + themes.length) % themes.length;
+		const theme = themes[index];
+		const result = ctx.ui.setTheme(theme.name);
+
+		if (result.success) {
+			updateStatus(ctx);
+			showSwatch(ctx);
+			ctx.ui.notify(`${theme.name} (${index + 1}/${themes.length})`, "info");
+		} else {
+			ctx.ui.notify(`Failed to set theme: ${result.error}`, "error");
+		}
+	}
+
+	// Shortcuts: Ctrl+X cycle forward, Ctrl+Q cycle backward
+	pi.registerShortcut("ctrl+x", {
+		description: "Cycle theme forward",
+		handler: async (ctx) => {
+			currentCtx = ctx;
+			cycleTheme(ctx, 1);
+		},
+	});
+
+	pi.registerShortcut("ctrl+q", {
+		description: "Cycle theme backward",
+		handler: async (ctx) => {
+			currentCtx = ctx;
+			cycleTheme(ctx, -1);
+		},
+	});
+
+	// Command: /theme
+	pi.registerCommand("theme", {
+		description: "Select a theme: /theme or /theme <name>",
+		handler: async (args, ctx) => {
+			currentCtx = ctx;
+			if (!ctx.hasUI) return;
+
+			const themes = getThemeList(ctx);
+			const arg = args.trim();
+
+			if (arg) {
+				const result = ctx.ui.setTheme(arg);
+				if (result.success) {
+					updateStatus(ctx);
+					showSwatch(ctx);
+					ctx.ui.notify(`Theme: ${arg}`, "info");
+				} else {
+					ctx.ui.notify(`Theme not found: ${arg}`, "error");
+				}
+				return;
+			}
+
+			const items = themes.map((t) => {
+				const desc = t.path ? t.path : "built-in";
+				const active = t.name === ctx.ui.theme.name ? " (active)" : "";
+				return `${t.name}${active} — ${desc}`;
+			});
+
+			const selected = await ctx.ui.select("Select Theme", items);
+			if (!selected) return;
+
+			const selectedName = selected.split(/\s/)[0];
+			const result = ctx.ui.setTheme(selectedName);
+			if (result.success) {
+				updateStatus(ctx);
+				showSwatch(ctx);
+				ctx.ui.notify(`Theme: ${selectedName}`, "info");
+			}
+		},
+	});
+
+	// Session init
+	pi.on("session_start", async (_event, ctx) => {
+		currentCtx = ctx;
+		updateStatus(ctx);
+	});
+
+	pi.on("session_shutdown", async () => {
+		if (swatchTimer) {
+			clearTimeout(swatchTimer);
+			swatchTimer = null;
+		}
+	});
+}
+```
+
+---
+
+## 4. UI Components
+
+### 4.1 Agent Status Widget
+
+```typescript
+function renderAgentStatus(ctx: ExtensionContext): string[] {
+	const agents = ctx.ui.getAllAgents();
+	const lines: string[] = [];
+	
+	lines.push("");
+	lines.push("═".repeat(60));
+	lines.push("🤖 Agent Status");
+	lines.push("═".repeat(60));
+	
+	for (const agent of agents) {
+		const status = agent.status === "running" ? "🟢" : 
+						agent.status === "completed" ? "🟡" :
+						agent.status === "error" ? "🔴" : "⚪";
+		lines.push(`${status} ${agent.name.padEnd(20)} | ${agent.description.slice(0, 30)}`);
+	}
+	
+	lines.push("");
+	return lines;
+}
+```
+
+### 4.2 Progress Indicator
+
+```typescript
+function renderProgress(ctx: ExtensionContext): string[] {
+	const progress = ctx.ui.getProgress();
+	const lines: string[] = [];
+	
+	lines.push("📊 Progress:");
+	lines.push(`   ${"█".repeat(progress.complete)}${"░".repeat(progress.total - progress.complete)} ${Math.round((progress.complete / progress.total) * 100)}%`);
+	
+	if (progress.message) {
+		lines.push(`   ${progress.message}`);
+	}
+	
+	return lines;
+}
+```
+
+### 4.3 Notification System
+
+```typescript
+function notify(ctx: ExtensionContext, message: string, level: "info" | "warning" | "error" | "success"): void {
+	if (!ctx.hasUI) return;
+	ctx.ui.notify(message, level);
+}
+
+// Usage
+notify(ctx, "Agent started", "info");
+notify(ctx, "Validation failed", "error");
+notify(ctx, "Style check complete", "success");
+```
+
+---
+
+## 5. Implementation Steps
+
+### Step 1: Create Theme Directory
+
+```bash
+mkdir -p CodepOS/.pi/themes
+```
+
+### Step 2: Create Theme Files
+
+Create each theme JSON file in `.pi/themes/`:
+
+```bash
+# Example: Create dracula theme
+cat > .pi/themes/dracula.json << 'EOF'
+{
+  "name": "dracula",
+  "fg": "#f8f8f2",
+  "bg": "#282a36",
+  "accent": "#bd93f9",
+  "success": "#50fa7b",
+  "warning": "#f1fa8c",
+  "error": "#ff5555",
+  "info": "#8be9fd",
+  "dim": "#6272a4",
+  "muted": "#6272a4",
+  "border": "#44475a",
+  "borderMuted": "#3b4055",
+  "separator": "#44475a",
+  "highlight": "#50fa7b",
+  "activeBorder": "#bd93f9",
+  "statusBar": "#44475a"
+}
+EOF
+```
+
+### Step 3: Create Theme Map
+
+```bash
+cat > .pi/themes/themeMap.json << 'EOF'
+{
+  "catppuccin-mocha": "catppuccin-mocha.json",
+  "cyberpunk": "cyberpunk.json",
+  "dracula": "dracula.json",
+  "everforest": "everforest.json",
+  "gruvbox": "gruvbox.json",
+  "midnight-ocean": "midnight-ocean.json",
+  "nord": "nord.json",
+  "ocean-breeze": "ocean-breeze.json",
+  "rose-pine": "rose-pine.json",
+  "synthwave": "synthwave.json",
+  "tokyo-night": "tokyo-night.json"
+}
+EOF
+```
+
+### Step 4: Create Theme Cycler Extension
+
+Copy the theme-cycler code from Section 3.4 to `.pi/extensions/theme-cycler.ts`.
+
+### Step 5: Create Main UI Extension
+
+Create `.pi/extensions/ui-extension.ts`:
+
+```typescript
+import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
+
+export default function (pi: ExtensionAPI) {
+	// Register UI extension
+	pi.registerTool({
+		name: "codepos_ui_status",
+		description: "Get current CodepOS system status",
+		parameters: {
+			type: "object",
+			properties: {
+				depth: {
+					type: "string",
+					enum: ["quick", "detailed", "verbose"],
+					default: "quick"
+				}
+			},
+			required: [],
+		},
+		execute: async (args, ctx) => {
+			if (!ctx.hasUI) return { message: "UI not available" };
+			
+			// Get agent teams status
+			const teams = [
+				"setup", "ui-gen-A", "validation-A", 
+				"validation-B", "validation-C", "planning"
+			];
+			
+			let status = "🔵 CodepOS System\n\n";
+			
+			for (const team of teams) {
+				const path = `.pi/multi-team/agents/${team}`;
+				const exists = ctx.fs.existsSync(path);
+				status += exists ? `   🟢 ${team}\n` : `   ⚪ ${team}\n`;
+			}
+			
+			return { message: status };
+		},
+	});
+	
+	// Session lifecycle
+	pi.on("session_start", async (_event, ctx) => {
+		// Apply default theme (dark)
+		ctx.ui.setTheme("dracula");
+		
+		// Register UI widgets
+		ctx.ui.setWidget("agent-status", renderAgentStatus.bind(null, ctx), { placement: "belowEditor" });
+	});
+	
+	pi.on("session_shutdown", async () => {
+		// Cleanup on shutdown
+	});
+}
+```
+
+### Step 6: Update pi.sh to Load Extensions
+
+```bash
+# In CodepOS/.pi/pi.sh
+cat > .pi/pi.sh << 'EOF'
+#!/bin/bash
+
+# Load CodepOS UI extensions
+if [ -f .pi/extensions/theme-cycler.ts ]; then
+    echo "Loading CodepOS theme cycler..."
+    # pi will auto-load extensions from .pi/extensions/
+fi
+
+# Load UI extension
+if [ -f .pi/extensions/ui-extension.ts ]; then
+    echo "Loading CodepOS UI extension..."
+    # pi will auto-load extensions from .pi/extensions/
+fi
+
+# Exit successfully
+exit 0
+EOF
+```
+
+---
+
+## 6. Code Examples
+
+### 6.1 Complete Theme JSON Example
+
+```json
+{
+  "name": "dark-pro",
+  "fg": "#e5e5e5",
+  "bg": "#1e1e1e",
+  "accent": "#4caf50",
+  "success": "#66bb6a",
+  "warning": "#dda202",
+  "error": "#ef5350",
+  "info": "#40c4ff",
+  "dim": "#858585",
+  "muted": "#6e6e6e",
+  "border": "#323232",
+  "borderMuted": "#2a2a2a",
+  "separator": "#3c3c3c",
+  "highlight": "#89d185",
+  "activeBorder": "#4caf50",
+  "statusBar": "#1e1e1e"
+}
+```
+
+### 6.2 Theme Switching with Command
+
+```bash
+# Switch to catppuccin-mocha theme
+pi /theme catppuccin-mocha
+
+# Cycle to next theme
+pi -e theme-cycler Ctrl+X
+
+# List available themes
+pi /theme
+```
+
+### 6.3 Using UI Tools from CodepOS Agents
+
+```typescript
+// In agent index.mjs
+import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
+
+export default async function (ctx: ExtensionContext): Promise<void> {
+	// Get UI context
+	if (ctx.hasUI) {
+		// Show notification
+		ctx.ui.notify("Agent started", "info");
+		
+		// Update status widget
+		ctx.ui.setStatus("status", "Processing...");
+		
+		// Render component
+		const lines = renderProgress(ctx);
+		ctx.ui.append(lines);
+	}
+	
+	// ... agent logic
+}
+```
+
+---
+
+## 7. Setup Instructions
+
+### 7.1 Prerequisites
+
+```bash
+# Ensure Node.js and npm are installed
+node --version
+npm --version
+
+# Install pi CLI globally (if not already installed)
+npm install -g @mariozechner/pi-coding-agent
+```
+
+### 7.2 Create Theme Files
+
+```bash
+cd CodepOS
+
+# Create themes directory
+mkdir -p .pi/themes
+
+# Create each theme file (see examples in this document)
+cat > .pi/themes/dracula.json << 'THEME_EOF'
+{
+  "name": "dracula",
+  "fg": "#f8f8f2",
+  "bg": "#282a36",
+  "accent": "#bd93f9",
+  "success": "#50fa7b",
+  "warning": "#f1fa8c",
+  "error": "#ff5555",
+  "info": "#8be9fd",
+  "dim": "#6272a4",
+  "muted": "#6272a4",
+  "border": "#44475a",
+  "borderMuted": "#3b4055",
+  "separator": "#44475a",
+  "highlight": "#50fa7b",
+  "activeBorder": "#bd93f9",
+  "statusBar": "#44475a"
+}
+THEME_EOF
+
+# Repeat for other themes...
+```
+
+### 7.3 Create Theme Map
+
+```bash
+cat > .pi/themes/themeMap.json << 'MAP_EOF'
+{
+  "catppuccin-mocha": "catppuccin-mocha.json",
+  "cyberpunk": "cyberpunk.json",
+  "dracula": "dracula.json",
+  "everforest": "everforest.json",
+  "gruvbox": "gruvbox.json",
+  "midnight-ocean": "midnight-ocean.json",
+  "nord": "nord.json",
+  "ocean-breeze": "ocean-breeze.json",
+  "rose-pine": "rose-pine.json",
+  "synthwave": "synthwave.json",
+  "tokyo-night": "tokyo-night.json"
+}
+MAP_EOF
+```
+
+### 7.4 Create Extensions Directory
+
+```bash
+# Create extensions directory
+mkdir -p .pi/extensions
+
+# Copy theme cycler extension
+cp /path/to/theme-cycler.ts .pi/extensions/theme-cycler.ts
+
+# Create main UI extension
+cat > .pi/extensions/ui-extension.ts << 'UI_EOF'
+import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
+
+export default function (pi: ExtensionAPI) {
+	// ... implementation from Section 5
+}
+UI_EOF
+```
+
+### 7.5 Run the System
+
+```bash
+cd CodepOS
+
+# Start pi CLI with extensions
+pi -e .pi/extensions/theme-cycler.ts -e .pi/extensions/ui-extension.ts
+
+# Or just run pi (auto-discovers extensions)
+pi
+```
+
+---
+
+## 8. Testing
+
+### 8.1 Theme Switching Test
+
+```bash
+# Start pi
+pi
+
+# Test theme cycling
+# Press Ctrl+X to cycle forward
+# Press Ctrl+Q to cycle backward
+
+# Or use command
+pi /theme dracula
+pi /theme cyberpunk
+pi /theme everforest
+```
+
+### 8.2 UI Widget Test
+
+```bash
+# Create test script
+cat > test-ui.mjs << 'TEST_EOF'
+import { exec } from 'child_process';
+
+exec('pi', (error, stdout, stderr) => {
+	if (error) {
+		console.error(`Error: ${error.message}`);
+		return;
+	}
+	console.log(stdout);
+});
+TEST_EOF
+
+# Run test
+node test-ui.mjs
+```
+
+### 8.3 Component Rendering Test
+
+```typescript
+// In test-ui.mjs
+import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
+
+async function testComponents(ctx: ExtensionContext): Promise<void> {
+	// Test status widget
+	if (ctx.hasUI) {
+		ctx.ui.setWidget("test-status", () => ({
+			render: () => ["[Test Status Widget]", "[OK]"],
+			invalidate: () => {},
+		}), { placement: "belowEditor" });
+	}
+}
+```
+
+---
+
+## 9. Troubleshooting
+
+### 9.1 Theme Not Loading
+
+**Error:** "Theme not found: <theme-name>"
+
+**Solution:**
+1. Ensure theme JSON file exists in `.pi/themes/`
+2. Verify JSON syntax (use JSON validator)
+3. Check theme name matches exactly
+
+### 9.2 Extensions Not Loading
+
+**Error:** "Extension not found"
+
+**Solution:**
+1. Ensure files are in `.pi/extensions/`
+2. Check file syntax (TypeScript must compile)
+3. Restart pi after adding extensions
+
+### 9.3 Keyboard Shortcuts Not Working
+
+**Symptom:** Ctrl+X / Ctrl+Q not cycling themes
+
+**Solution:**
+1. Ensure theme-cycler extension is loaded
+2. Check for conflicting key bindings
+3. Verify pi version supports shortcuts
+
+### 9.4 Widget Not Rendering
+
+**Symptom:** Status widgets not appearing
+
+**Solution:**
+1. Ensure `ctx.hasUI` returns true
+2. Check widget placement configuration
+3. Verify render function returns string array
+
+---
+
+## 10. Best Practices
+
+### 10.1 Theme Management
+
+- Use JSON files for theme definitions (easier to version control)
+- Keep theme names consistent with pi.dev standards
+- Test themes across different terminal emulators
+
+### 10.2 Extension Organization
+
+```
+.pi/extensions/
+├── theme-cycler.ts      # Theme cycling
+├── ui-extension.ts      # Main UI extension
+└── custom-tool.ts       # Custom tools
+```
+
+### 10.3 Performance
+
+- Use `setTimeout` for widget updates (not `setInterval`)
+- Clean up widgets on session shutdown
+- Avoid heavy rendering in hot paths
+
+### 10.4 Accessibility
+
+- Ensure sufficient color contrast
+- Provide text-based fallbacks
+- Use semantic widget names
+
+### 10.5 Security
+
+- Don't expose sensitive data in UI notifications
+- Validate user input before rendering
+- Follow pi.dev security guidelines
+
+---
+
+## Appendix A: All Theme Examples
+
+### A.1 Catppuccin Mocha
+
+```json
+{
+  "name": "catppuccin-mocha",
+  "fg": "#cad3f5",
+  "bg": "#1e1e2e",
+  "accent": "#cba6f7",
+  "success": "#a6e3a1",
+  "warning": "#f9e2af",
+  "error": "#f38ba8",
+  "info": "#89b4fa",
+  "dim": "#6c7086",
+  "muted": "#585b70",
+  "border": "#313244",
+  "borderMuted": "#292b3c",
+  "separator": "#45475a",
+  "highlight": "#a6e3a1",
+  "activeBorder": "#cba6f7",
+  "statusBar": "#1e1e2e"
+}
+```
+
+### A.2 Nord
+
+```json
+{
+  "name": "nord",
+  "fg": "#e5e5e5",
+  "bg": "#2e3440",
+  "accent": "#88c0d0",
+  "success": "#a3be8c",
+  "warning": "#ebcb8b",
+  "error": "#bf616a",
+  "info": "#88c0d0",
+  "dim": "#4c566a",
+  "muted": "#4c566a",
+  "border": "#3b4252",
+  "borderMuted": "#323640",
+  "separator": "#3b4252",
+  "highlight": "#a3be8c",
+  "activeBorder": "#88c0d0",
+  "statusBar": "#2e3440"
+}
+```
+
+### A.3 Rose Pine
+
+```json
+{
+  "name": "rose-pine",
+  "fg": "#e0def4",
+  "bg": "#191724",
+  "accent": "#f6c177",
+  "success": "#9ccfd8",
+  "warning": "#f6c177",
+  "error": "#eb6f92",
+  "info": "#cba6f7",
+  "dim": "#6e6a82",
+  "muted": "#57526e",
+  "border": "#44415e",
+  "borderMuted": "#38354a",
+  "separator": "#44415e",
+  "highlight": "#f6c177",
+  "activeBorder": "#c49ef7",
+  "statusBar": "#191724"
+}
+```
+
+---
+
+**End of UI Implementation Guide**
+
+**Document Version:** 1.0  
+**Last Updated:** 2026  
+**Maintained By:** CodepOS Team  
+**Compliance:** pi.dev 100% Compliant ✅

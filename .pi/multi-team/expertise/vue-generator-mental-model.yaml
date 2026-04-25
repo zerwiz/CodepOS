@@ -1,0 +1,85 @@
+# Vue Generator Mental Model
+# This expertise captures Vue component patterns and SFC conventions
+
+name: "vue-generator"
+model: "stepfun/step-3.5-flash"
+
+# Domain knowledge
+domain:
+  path: "apps/infinite-ui/"
+  read: true
+  upsert: true
+  delete: false
+
+# Expertise areas
+expertise:
+  # Vue component patterns
+  component-patterns:
+    use-when: "Generate Vue components with proper SFC structure"
+    max-lines: 5000
+    
+  # SFC conventions
+  sfc-conventions:
+    use-when: "Follow Vue Single File Component standards"
+    max-lines: 3000
+    
+  # CSS custom properties
+  css-variables:
+    use-when: "Use CSS custom properties for theming"
+    updatable: true
+    max-lines: 10000
+    
+  # Responsive patterns
+  responsive-design:
+    use-when: "Create responsive layouts"
+    updatable: true
+    max-lines: 5000
+    
+  # Component libraries
+  component-libraries:
+    use-when: "Use shadcn-vue and headless UI"
+    max-lines: 15000
+
+# Skills
+skills:
+  # Mental model
+  name: "mental-model"
+  path: ".pi/multi-team/skills/mental-model.md"
+  use-when: "Track Vue component generation patterns and read at task start"
+  updatable: true
+  max-lines: 5000
+  
+  # Active listener
+  name: "active-listener"
+  path: ".pi/multi-team/skills/active-listener.md"
+  use-when: "Always. Read conversation log before every response."
+  updatable: false
+  max-lines: 1000
+  
+  # Precise worker
+  name: "precise-worker"
+  path: ".pi/multi-team/skills/precise-worker.md"
+  use-when: "Always. Execute exactly what assigned - no improvising."
+  updatable: false
+  max-lines: 5000
+  
+  # Parallel updates
+  name: "parallel-updates"
+  path: ".pi/multi-team/skills/parallel-mental-model-updates.md"
+  use-when: "Always. Mental model file shared with parallel teams."
+  updatable: true
+  max-lines: 2000
+
+# Tools
+tools:
+  - read
+  - write
+  - edit
+  - bash
+  - grep
+  - find
+  - ls
+
+# Status
+status: "active"
+last-updated: "2025-04-24T18:45:00Z"

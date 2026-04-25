@@ -1,0 +1,103 @@
+# CodepOS Main Project - Git Ignore Patterns
+
+# ================================
+# pi.dev Sessions (PERSONAL DATA)
+# ================================
+# Ignore all pi sessions and personal chat logs
+.pi/multi-team/agents/*/.pi/sessions/*
+.pi/sessions/*
+
+# Exclude markdown session files (optional - keep for reference)
+.pi/sessions/*/*.md
+.pi/sessions/*.md
+
+# ================================
+# Cache and Temp Files
+# ================================
+.pi/cache/*
+.pi/logs/*
+.tmp/*
+node_modules/
+*.log
+*.tmp
+
+# ================================
+# Build Artifacts
+# ================================
+dist/
+build/
+coverage/
+*.js.map
+*.ts.map
+
+# ================================
+# IDE and Editor Files
+# ================================
+.vscode/*
+.idea/*
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ================================
+# Environment Variables (optional)
+# ================================
+# .env files are typically gitignored by default
+# Uncomment if needed:
+# .env
+# .env.local
+# .env.*.local
+
+# ================================
+# Harness Specific
+# ================================
+# Ignore harness sessions but keep configuration
+harness/.pi/sessions/*
+harness/.pi/sessions/!(*.md)
+harness/.pi/cache/*
+harness/.pi/logs/*
+
+# Keep harness config files
+harness/.pi/APPEND_SYSTEM.md
+harness/.pi/env
+harness/.pi/*.md
+
+# ================================
+# Documentation and Build
+# ================================
+# Uncomment to ignore docs:
+# docs/build/
+# docs/api/
+
+# ================================
+# Testing
+# ================================
+# Uncomment to ignore test outputs:
+# junit.xml
+# test-results/
+
+# ================================
+# OS Files
+# ================================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ================================
+# Secrets and Credentials
+# ================================
+# Uncomment if needed:
+# .pem
+# .key
+# secrets.txt
+
+# ================================
+# Package Lock Files
+# ================================
+# Uncomment to ignore:
+# yarn.lock
+# pnpm-lock.yaml
+# package-lock.json

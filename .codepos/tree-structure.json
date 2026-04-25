@@ -1,0 +1,17 @@
+{
+  "app": "infinite-ui",
+  "components": {
+    "aegis-activity-log": {
+      "path": "ui-agents/apps/infinite-ui/src/components/aegis-activity-log.tsx",
+      "dependencies": ["shadcn-ui"]
+    },
+    "aegis-agent-chat": {
+      "path": "ui-agents/apps/infinite-ui/src/components/aegis-agent-chat.tsx",
+      "dependencies": ["shadcn-ui", "framer-motion"]
+    },
+    "aegis-stream-layout": {
+      "path": "ui-agents/apps/infinite-ui/src/components/aegis-stream-layout.tsx",
+      "dependencies": ["shadcn-ui", "framer-motion", "recharts"]
+    }
+  }
+}

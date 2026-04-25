@@ -1,0 +1,22 @@
+# Alert Severity Levels
+
+severity:
+  critical:
+    action: "block_until_approved"
+    notify: "immediate"
+    council: "all"
+    
+  high:
+    action: "block_until_review"
+    notify: "urgent"
+    council: "security,validation"
+    
+  medium:
+    action: "council_review"
+    notify: "normal"
+    council: "security,validation,context"
+    
+  low:
+    action: "logged"
+    notify: "scheduled"
+    council: "security"

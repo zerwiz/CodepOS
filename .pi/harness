@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+echo ""
+echo "╔════════════════════════════════════════════════════════════╗"
+echo "║         💙 CODEPOS MULTI-AGENT HARNESS BOOT UP              ║"
+echo "╚════════════════════════════════════════════════════════════╝"
+echo ""
+
+# Boot orchestrator
+echo "🚀 Booting Orchestrator..."
+
+# Setup extensions
+setup multi-agent-system --orchestrate
+
+# Orchestrate
+orhchestrate all
+
+echo ""
+echo "✅ Boot complete"
+echo ""

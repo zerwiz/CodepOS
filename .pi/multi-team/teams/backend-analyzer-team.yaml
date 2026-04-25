@@ -1,0 +1,29 @@
+# Backend Analyzer Team Configuration
+# Enables this team to run in tilt done mode
+
+team:
+  id: "/agents/backend/analyzer"
+  name: "Backend Analyzer"
+  parent: "/agents/backend"
+  children: []
+
+mode:
+  type: "tilt-done"
+  active: true
+  children_enabled: false
+  parent_communication: enabled
+
+agents:
+  - id: "com.atelier.analyzer"
+    role: "main"
+    status: "tilt-done"
+    capabilities:
+      - backend-analysis
+      - rule-application
+
+capabilities:
+  backend_analysis: true
+
+inventory:
+  endpoint: ".cli/team/backend-analyzer/__init__.py"
+  cache_ttl: 300

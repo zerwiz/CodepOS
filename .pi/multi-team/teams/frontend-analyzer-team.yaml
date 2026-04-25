@@ -1,0 +1,29 @@
+# Frontend Analyzer Team Configuration
+# Enables this team to run in tilt done mode
+
+team:
+  id: "/agents/frontend/analyzer"
+  name: "Frontend Analyzer"
+  parent: "/agents/frontend"
+  children: []
+
+mode:
+  type: "tilt-done"
+  active: true
+  children_enabled: false
+  parent_communication: enabled
+
+agents:
+  - id: "com.atelier.frontend-analyzers"
+    role: "main"
+    status: "tilt-done"
+    capabilities:
+      - frontend-analysis
+      - rule-application
+
+capabilities:
+  frontend_analysis: true
+
+inventory:
+  endpoint: ".cli/team/frontend-analyzer/__init__.py"
+  cache_ttl: 300

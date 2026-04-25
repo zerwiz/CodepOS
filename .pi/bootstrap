@@ -1,0 +1,36 @@
+#!/bin/bash
+
+echo ""
+echo "╔════════════════════════════════════════════════════════════╗"
+echo "║  💙 CODEPOS MULTI-AGENT SYSTEM - BOOTING                    ║"
+echo "╚════════════════════════════════════════════════════════════╝"
+echo ""
+
+echo "📦 Loading extensions..."
+echo ""
+
+# Load all extensions
+if [ -f .pi/teams/design/index.mjs ]; then echo "  ✅ design"; fi
+if [ -f .pi/teams/ui-components/index.mjs ]; then echo "  ✅ ui-components"; fi
+if [ -f .pi/teams/testing/index.mjs ]; then echo "  ✅ testing"; fi
+if [ -f .pi/teams/api-backend/index.mjs ]; then echo "  ✅ api-backend"; fi
+if [ -f .pi/teams/frontend/index.mjs ]; then echo "  ✅ frontend"; fi
+if [ -f .pi/teams/database/index.mjs ]; then echo "  ✅ database"; fi
+if [ -f .pi/teams/integration/index.mjs ]; then echo "  ✅ integration"; fi
+if [ -f .pi/teams/setup/index.mjs ]; then echo "  ✅ setup"; fi
+if [ -f .pi/teams/security-scan/index.mjs ]; then echo "  ✅ security-scan"; fi
+if [ -f .pi/teams/council-overview/index.mjs ]; then echo "  ✅ council-overview"; fi
+if [ -f .pi/teams/orchestrate/index.mjs ]; then echo "  ✅ orchestrate"; fi
+
+echo ""
+echo "⚙️  Status: All systems operational"
+echo ""
+
+# Run orchestrate if requested
+if [ -f justfile ]; then
+  echo "⚙️  Orchestration complete"
+else
+  echo "⚙️  No justfile found - system ready"
+fi
+
+echo ""

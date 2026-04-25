@@ -1,0 +1,211 @@
+# pi.dev Multi-Team Configuration
+# This file defines all agents and their team assignments
+# Each agent belongs to a team in a hierarchical structure
+
+# Shared context - DOCUMENTATION - Orchestrator reads these first
+shared_context:
+  documentation:
+    - /home/zerwiz/CodeP/CodepOS/README.md
+    - /home/zerwiz/CodeP/CodepOS/CLAUDE.md
+    - /home/zerwiz/CodeP/CodepOS/docs/PROJECT_STATUS.md
+  schemas:
+    - /home/zerwiz/CodeP/CodepOS/apps/infinite-ui/src/schemas/trees.schema.ts
+  branding:
+    - /home/zerwiz/CodeP/CodepOS/apps/branding/src
+  architecture:
+    - /home/zerwiz/CodeP/CodepOS/ARCHITECTURE_SUMMARY.md
+    - /home/zerwiz/CodeP/CodepOS/CODEPOS_ARCHITECTURE.md
+
+# Agent teams configuration
+agents:
+  # Setup team - Environment initialization orchestrator
+  - id: "com.atelier.setup"
+    name: "Setup Orchestrator"
+    role: "initializer"
+    class: ".pi/multi-team/agents/setup"
+    expertise: "environment-setup"
+    team: "/agents/setup/"
+    config:
+      rules: [com.atelier.setup.rules]
+      timeout: 30
+      sandbox: true
+      inventory_endpoint: ".pi/multi-team/agents/setup/__init__.yaml"
+      priority: 1
+      status: active
+
+  # UI Generation team - Main component/UI generation pipeline
+  - id: "com.atelier.ui-gen-A"
+    name: "UI Generation Agent"
+    role: "generator"
+    class: ".pi/multi-team/agents/ui-gen-A"
+    expertise: "ui-generation"
+    team: "/agents/ui-gen-A/"
+    config:
+      rules: [com.atelier.ui-gen-A.rules]
+      timeout: 30
+      sandbox: true
+      inventory_endpoint: ".pi/multi-team/agents/ui-gen-A/__init__.yaml"
+      priority: 3
+      status: active
+      dependencies:
+        - setup
+
+  # Validation A team - QA Tests (Automated testing)
+  - id: "com.atelier.validation-A"
+    name: "QA Testing Agent"
+    role: "quality_assurance"
+    class: ".pi/multi-team/agents/validation-A"
+    expertise: "qa-testing"
+    team: "/agents/validation-A/"
+    config:
+      rules: [com.atelier.validation-A.rules]
+      timeout: 30
+      sandbox: true
+      inventory_endpoint: ".pi/multi-team/agents/validation-A/__init__.yaml"
+      priority: 4
+      status: active
+      checks:
+        - qa_tests
+        - automated-tests
+
+  # Validation B team - Automated Testing Pipeline
+  - id: "com.atelier.validation-B"
+    name: "Automated Testing Agent"
+    role: "tester"
+    class: ".pi/multi-team/agents/validation-B"
+    expertise: "automated-testing"
+    team: "/agents/validation-B/"
+    config:
+      rules: [com.atelier.validation-B.rules]
+      timeout: 60
+      sandbox: true
+      inventory_endpoint: ".pi/multi-team/agents/validation-B/__init__.yaml"
+      priority: 4
+      status: active
+      checks:
+        - automated-tests
+        - e2e-validation
+
+  # Validation C team - Style Validation Pipeline
+  - id: "com.atelier.validation-C"
+    name: "Style Validation Agent"
+    role: "style_validator"
+    class: ".pi/multi-team/agents/validation-C"
+    expertise: "style-validation"
+    team: "/agents/validation-C/"
+    config:
+      rules: [com.atelier.validation-C.rules]
+      timeout: 45
+      sandbox: true
+      inventory_endpoint: ".pi/multi-team/agents/validation-C/__init__.yaml"
+      priority: 4
+      status: active
+      checks:
+        - style-guidelines
+        - schema-validation
+
+# Team hierarchy
+teams:
+  # Root team (all agents)
+  root:
+    id: "/agents/"
+    parent: null
+    children:
+      - "/agents/setup/"
+      - "/agents/ui-gen-A/"
+      - "/agents/validation-A/"
+      - "/agents/validation-B/"
+      - "/agents/validation-C/"
+      - "/agents/planning/"
+
+  # Planning team - NEW: Workflow management and task coordination
+  planning:
+    id: "/agents/planning/"
+    parent: "/agents/"
+    type: workflow_management
+    priority: 2
+    children: []
+    dependencies:
+      - setup
+      - ui-gen-A
+      - validation-A
+      - validation-B
+      - validation-C
+
+  # Setup team
+  setup:
+    id: "/agents/setup/"
+    parent: "/agents/"
+    type: initializer
+    priority: 1
+    children: []
+
+  # UI Generation team
+  ui-gen-A:
+    id: "/agents/ui-gen-A/"
+    parent: "/agents/"
+    type: generation
+    priority: 3
+    children: []
+    dependencies:
+      - setup
+
+  # Validation A team
+  validation-A:
+    id: "/agents/validation-A/"
+    parent: "/agents/"
+    type: quality_assurance
+    priority: 4
+    children: []
+    dependencies:
+      - ui-gen-A
+
+  # Validation B team
+  validation-B:
+    id: "/agents/validation-B/"
+    parent: "/agents/"
+    type: testing
+    priority: 4
+    children: []
+
+  # Validation C team
+  validation-C:
+    id: "/agents/validation-C/"
+    parent: "/agents/"
+    type: style_validation
+    priority: 4
+    children: []
+
+# Global configuration
+global:
+  api_url: "https://api.codepos.com"
+  sandbox: true
+  timeout: 30
+  max_agents_per_team: 8
+  max_children_per_team: 10
+  enable_discovery: true
+  enable_sessions: true
+  enable_expertise: true
+  enable_skills: true
+  enable_terminal_ui: true
+  enable_status_monitoring: true
+
+# Shared state and sessions
+state:
+  sessions_dir: ".pi/multi-team/sessions/"
+  artifacts_dir: ".pi/multi-team/artifacts/"
+  history_dir: ".pi/multi-team/history/"
+
+# API inventory
+inventory:
+  enable: true
+  cache_ttl: 300 # 5 minutes
+  refresh_on_change: true
+  fallback_to_yaml: true
+
+# Security
+security:
+  auth_method: "bearer"
+  token_expiry: 3600
+  require_validation: true
+  encryption: "aes-256"

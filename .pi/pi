@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ -f .pi/boot.sh ]; then
+  source .pi/boot.sh
+else
+  echo "🔧 CodepOS Multi-Agent System"
+  echo "📁 Extensions loaded: $(ls .pi/multi-team/agents 2>/dev/null | wc -l)"
+  echo "🚀 Orchestrator ready"
+  echo ""
+fi

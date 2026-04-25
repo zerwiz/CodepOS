@@ -1,0 +1,40 @@
+# Agent Communication Contract
+
+agents:
+  - design
+  - ui-components
+  - api-backend
+  - testing
+  - integration
+  - database
+  - frontend
+  - planning
+  - setup
+
+council:
+  members:
+    - Security
+    - Validation
+    - Context
+    - Orchestration
+
+validation:
+  rules:
+    - "Agents must report context before actions"
+    - "Security checks before sensitive operations"
+    - "External dependencies validated"
+    - "Confidentiality maintained"
+
+security:
+  triggers:
+    - "data_access"
+    - "external_api"
+    - "system_change"
+    - "auth_required"
+
+messages:
+  must_include:
+    - "reasoning"
+    - "confidence"
+    - "security_status"
+    - "next_steps"

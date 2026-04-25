@@ -1,0 +1,27 @@
+#!/bin/bash
+
+echo ""
+echo "╔════════════════════════════════════════════════════════════╗"
+echo "║     CODEPOS HARNESS - BOOTING MULTI-AGENT SYSTEM            ║"
+echo "╚════════════════════════════════════════════════════════════╝"
+echo ""
+
+# Change to harness directory
+cd .pi
+
+echo "🔧 Loading extensions..."
+for agent in design ui-components testing api-backend integration database frontend planning setup security-scan council-overview security-validate-all security-scan; do
+  if [ -f .pi/multi-team/agents/$agent/index.mjs ]; then
+    echo "  ✅ $agent loaded"
+  fi
+done
+
+echo ""
+echo "🚀 Orchestrator starting..."
+
+# Run orchestrator
+just orchestrate
+
+echo ""
+echo "✅ Boot complete!"
+echo ""

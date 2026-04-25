@@ -1,0 +1,29 @@
+# Backend Testers Team Configuration
+# Enables this team to run in tilt done mode
+
+team:
+  id: "/agents/backend/testers"
+  name: "Backend Testers"
+  parent: "/agents/backend"
+  children: []
+
+mode:
+  type: "tilt-done"
+  active: true
+  children_enabled: false
+  parent_communication: enabled
+
+agents:
+  - id: "com.atelier.testers"
+    role: "main"
+    status: "tilt-done"
+    capabilities:
+      - backend-testing
+      - coverage-analysis
+
+capabilities:
+  backend_testing: true
+
+inventory:
+  endpoint: ".cli/team/backend-testers/__init__.py"
+  cache_ttl: 300

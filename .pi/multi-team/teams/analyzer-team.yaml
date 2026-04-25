@@ -1,0 +1,46 @@
+# Analyzer Team Configuration
+# Enables analyzer agents to run in tilt done mode
+
+# Team definition
+team:
+  id: "/"
+  name: "root"
+  parent: null
+  children:
+    - /agents/backend
+    - /agents/frontend
+    - /agents/infra
+
+# Team agents
+agents:
+  - id: "com.atelier.analyzer"
+    name: "Analyzer Team"
+    role: "root"
+    status: "tilt-done"
+    capabilities:
+      - code-analysis
+      - file-access
+      - rule-application
+    configuration:
+      timeout: 30
+      sandbox: true
+
+# Team capabilities
+capabilities:
+  analysis: true
+  review: true
+  test: true
+  deploy: true
+
+# Status and mode
+mode:
+  type: "tilt-done"
+  active: true
+  children_enabled: true
+  parent_communication: enabled
+  sibling_collaboration: enabled
+
+# Inventory endpoint
+inventory:
+  endpoint: ".cli/team/__init__.py"
+  cache_ttl: 300
