@@ -1,0 +1,133 @@
+# Damage Control Configuration
+# =========================================
+# Edit this file to customize damage control permissions
+#
+# How to use:
+#   1. Add dangerous commands to block under "dangerousCommands"
+#   2. Add protected paths under "protectedPaths"
+#   3. Set protection level: zero, read-only, no-delete
+#
+# Example:
+#   dangerousCommands:
+#     - "rm -rf *"
+#     - "git reset --hard"
+#
+#   protectedPaths:
+#     - ".env"
+#     - "README.md"
+#
+# =========================================
+
+# Dangerous bash commands to block
+# Add new patterns here to block
+dangerousCommands:
+  # Destructive file operations
+  - "rm -rf"
+  - "rm -rf-"
+  - "rm -rf/"
+  - "sudo rm"
+  - "rm --recursive"
+  - "rm --force"
+
+  # Dangerous git operations
+  - "git reset --hard"
+  - "git clean -f"
+  - "git clean -d"
+  - "git stash clear"
+  - "git push -f"
+
+  # Dangerous permission changes
+  - "chmod 777"
+  - "chmod -R 777"
+  - "chown root"
+
+  # System destruction
+  - "terraform destroy"
+  - "pulumi destroy"
+  - "kubectl delete namespace"
+  - "docker system prune -a"
+
+  # Cloud destruction
+  - "gcloud projects delete"
+  - "aws s3 rm --recursive"
+  - "aws dynamodb delete-table"
+
+# Protected paths and their permission levels
+# Levels: zero, read-only, no-delete
+protectedPaths:
+  # Zero Access - No read/write/delete (secrets, credentials)
+  zero:
+    - ".env"
+    - ".env.*"
+    - "secrets*"
+    - "*.pem"
+    - "*.key"
+    - "*.p12"
+    - "*.pfx"
+    - "~/.ssh/"
+    - "~/.aws/"
+    - "~/.gnupg/"
+    - "~/.kube/"
+    - "kubeconfig"
+    - "*-credentials.json"
+    - "*service-account*.json"
+    - "*.tfstate"
+    - "*.tfstate.backup"
+
+  # Read-Only - Can read but not modify
+  read-only:
+    - "/etc/"
+    - "/usr/"
+    - "/bin/"
+    - "/sbin/"
+    - "/boot/"
+    - "/root/"
+    - "package-lock.json"
+    - "yarn.lock"
+    - "pnpm-lock.yaml"
+    - "bun.lockb"
+    - "README.md"
+    - "LICENSE"
+    - "CLAUDE.md"
+    - "CHANGELOG.md"
+    - "CONTRIBUTING.md"
+    - "*.min.js"
+    - "*.min.css"
+    - "dist/"
+    - "build/"
+    - "node_modules/"
+
+  # No Delete - Can read/write but not delete
+  no-delete:
+    - "CLAUDE.md"
+    - "README.md"
+    - "LICENSE"
+    - ".github/"
+    - ".git/"
+    - ".gitignore"
+    - ".gitmodules"
+    - ".pi/state/"
+    - ".pi/extensions/"
+    - ".pi/multi-team/"
+    - "Dockerfile"
+    - "docker-compose.yml"
+    - ".dockerignore"
+
+# Default behavior for files outside project directory
+defaultOutsideProject: block  # Options: block, ask, allow
+
+# Default behavior for files in no-delete paths
+defaultNoDelete: no-delete   # Options: no-delete, allow
+
+# Enable these guards
+enableGuards:
+  bash-command: true
+  path-access: true
+  file-delete: true
+  file-move: true
+
+# Violation behavior
+violationBehavior:
+  first: ask        # First violation: ask user
+  second: warn      # Second violation: warn
+  third: block      # Third violation: block
