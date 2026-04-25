@@ -279,36 +279,21 @@ let currentThemeIndex = 0;
 /**
  * Update status bar with current theme info
  */
-function updateStatus(themeName: string): void {
+function updateStatus(ctx: ExtensionContext, themeName: string): void {
 	if (!ctx.hasUI) return;
 
 	const swatch = `\n  🎨 Theme: ${themeName}`;
-	ctx.ui.setStatusBar(`${swatch}\n`);
+	ctx.ui.setStatus("theme", `${themeName}`);
 }
 
 /**
  * Show theme swatch visualization
  */
-function showSwatch(theme: ThemeDefinition): void {
+function showSwatch(ctx: ExtensionContext, theme: ThemeDefinition): void {
 	if (!ctx.hasUI) return;
 
-	const block = `\n  ┌─────────────────────────────┐`;
-	const swatch = `  │  ${theme.bg}  Background     │`;
-	const label = `  │  ${theme.accent}  Theme: ${theme.name}  │`;
-	const border = `  └─────────────────────────────┘`;
-
-	const placement = {
-		placement: "belowEditor",
-		size: 5
-	};
-
-	const combined = `${block}\n  │  ${theme.fg}  Foreground        │\n  │  ${theme.accent}  Accent           │\n  │  ${theme.success}  Success         │\n  │  ${theme.error}  Error            │\n  ${border}\n`;
-
-	ctx.ui.showNotification({
-		placement: "belowEditor",
-		size: 5,
-		content: combined
-	});
+	const combined = `Theme: ${theme.name}\nAccent: ${theme.accent}`;
+	ctx.ui.notify(combined, "info");
 }
 
 /**
@@ -330,7 +315,7 @@ function findCurrentIndex(themeName: string): number {
 /**
  * Cycle to next or previous theme
  */
-function cycleTheme(direction: "next" | "prev" | number): string {
+function cycleTheme(ctx: ExtensionContext, direction: "next" | "prev" | number): string {
 	const themes = getThemeList();
 	let index = currentThemeIndex;
 
@@ -347,8 +332,8 @@ function cycleTheme(direction: "next" | "prev" | number): string {
 	const theme = themes[index];
 	const result = `Switched to theme: ${theme.name}`;
 
-	updateStatus(theme.name);
-	showSwatch(theme);
+	updateStatus(ctx, theme.name);
+	showSwatch(ctx, theme);
 
 	return result;
 }
@@ -356,7 +341,7 @@ function cycleTheme(direction: "next" | "prev" | number): string {
 /**
  * Set specific theme by name
  */
-function setTheme(themeName: string): string {
+function setTheme(ctx: ExtensionContext, themeName: string): string {
 	const themes = getThemeList();
 	const found = themes.find(t => t.name === themeName);
 
@@ -365,8 +350,8 @@ function setTheme(themeName: string): string {
 	}
 
 	currentThemeIndex = themes.findIndex(t => t.name === themeName);
-	updateStatus(found.name);
-	showSwatch(found);
+	updateStatus(ctx, found.name);
+	showSwatch(ctx, found);
 
 	return `Applied theme: ${found.name}`;
 }
@@ -398,7 +383,7 @@ export default function (pi: ExtensionAPI): void {
 			if (!ctx.hasUI) return { message: "UI not available for theme switching" };
 
 			if (args.themeName && args.themeName.length > 0) {
-				const result = setTheme(args.themeName);
+				const result = setTheme(ctx, args.themeName);
 				return { message: result };
 			}
 
@@ -408,14 +393,14 @@ export default function (pi: ExtensionAPI): void {
 				const randomIndex = Math.floor(Math.random() * THEMES.length);
 				const randomTheme = THEMES[randomIndex];
 				currentThemeIndex = randomIndex;
-				updateStatus(randomTheme.name);
-				showSwatch(randomTheme);
+				updateStatus(ctx, randomTheme.name);
+				showSwatch(ctx, randomTheme);
 				return {
 					message: `Random theme applied: ${randomTheme.name}`
 				};
 			}
 
-			const result = cycleTheme(direction);
+			const result = cycleTheme(ctx, direction);
 			return { message: result };
 		}
 	});
@@ -507,15 +492,11 @@ export default function (pi: ExtensionAPI): void {
 	pi.on("session_start", async (_event, ctx) => {
 		// Apply default theme (dracula - index 2)
 		currentThemeIndex = 2;
-		updateStatus(THEMES[2].name);
+		updateStatus(ctx, THEMES[2].name);
 
 		// Show welcome message with theme
 		if (ctx.hasUI) {
-			ctx.ui.showNotification({
-				placement: "belowEditor",
-				size: 3,
-				content: `🚀 CodepOS Terminal UI\n  Theme: ${THEMES[currentThemeIndex].name}\n  Ready for development!`
-			});
+			ctx.ui.notify(`CodepOS: ${THEMES[currentThemeIndex].name}`, "info");
 		}
 	});
 
@@ -527,32 +508,25 @@ export default function (pi: ExtensionAPI): void {
 
 		// Ctrl + Left: Previous theme
 		if (key === "ArrowLeft" && event.ctrlKey) {
-			const result = cycleTheme("prev");
-			ctx.ui.showNotification({
-				placement: "topRight",
-				size: 2,
-				content: result
-			});
+			const result = cycleTheme(ctx, "prev");
+			ctx.ui.notify(result, "info");
 		}
 
 		// Ctrl + Right: Next theme
 		if (key === "ArrowRight" && event.ctrlKey) {
-			const result = cycleTheme("next");
-			ctx.ui.showNotification({
-				placement: "topRight",
-				size: 2,
-				content: result
-			});
+			const result = cycleTheme(ctx, "next");
+			ctx.ui.notify(result, "info");
 		}
 
 		// Ctrl + Space: Random theme
 		if (key === " " && event.ctrlKey) {
-			const result = cycleTheme("random");
-			ctx.ui.showNotification({
-				placement: "topRight",
-				size: 2,
-				content: result
-			});
+			const result = cycleTheme(ctx, "next");
+			const randomIndex = Math.floor(Math.random() * THEMES.length);
+			THEMES[randomIndex];
+			currentThemeIndex = randomIndex;
+			updateStatus(ctx, THEMES[randomIndex].name);
+			showSwatch(ctx, THEMES[randomIndex]);
+			ctx.ui.notify(`Random theme: ${THEMES[randomIndex].name}`, "info");
 		}
 	});
 

@@ -4,7 +4,6 @@
 skills:
   - name: style-validation
     description: Validate UI styles and design consistency
-    description: Ensure components adhere to design system and style guidelines
     operations:
       - style-check
       - design-system-validation
@@ -13,7 +12,6 @@ skills:
 
   - name: schema-compliance
     description: Validate UI components against schema definitions
-    description: Ensure generated components match schema specifications
     operations:
       - zod-validation
       - json-schema-checking
@@ -22,7 +20,6 @@ skills:
 
   - name: guideline-enforcement
     description: Enforce project style and coding guidelines
-    description: Validate code follows established style guides
     operations:
       - eslint-checking
       - prettier-formatting
@@ -31,7 +28,6 @@ skills:
 
   - name: format-compliance
     description: Ensure code formatting and structural compliance
-    description: Validate code meets formatting requirements
     operations:
       - indent-checking
       - spacing-verification
@@ -40,7 +36,6 @@ skills:
 
   - name: visual-regression
     description: Detect visual regressions in UI components
-    description: Compare UI renders against approved visual standards
     operations:
       - screenshot-comparison
       - layout-regression-check

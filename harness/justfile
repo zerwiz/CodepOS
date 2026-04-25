@@ -10,10 +10,6 @@ harness-list-teams:
     @echo "📦 Available CodepOS Teams:"
     @cd harness && list_codepos_teams
 
-# Deploy a specific team from harness
-harness-deploy: teamName
-    @cd harness && deploy_codepos_team teamName={{teamName}}
-
 # Check harness status
 harness-status:
     @cd harness && check_codepos_status detailed

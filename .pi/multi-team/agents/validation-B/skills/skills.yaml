@@ -4,7 +4,6 @@
 skills:
   - name: automated-testing
     description: Execute automated test suites and verify system functionality
-    description: Run and manage automated testing workflows with parallel execution
     operations:
       - test-discovery
       - test-execution
@@ -14,7 +13,6 @@ skills:
 
   - name: regression-tests
     description: Perform regression testing across all system components
-    description: Verify new changes don't break existing functionality
     operations:
       - test-suite-execution
       - baseline-comparison
@@ -24,7 +22,6 @@ skills:
 
   - name: e2e-validation
     description: End-to-end validation of user journeys and system flows
-    description: Validate complete user flows from start to finish
     operations:
       - user-journey-validation
       - flow-verification
@@ -34,7 +31,6 @@ skills:
 
   - name: performance-testing
     description: Performance and load testing capabilities
-    description: Measure and validate system performance under various loads
     operations:
       - load-testing
       - stress-testing
@@ -44,7 +40,6 @@ skills:
 
   - name: e2e-scenarios
     description: Execute complex end-to-end scenarios
-    description: Test complete application workflows with realistic user data
     operations:
       - scenario-definition
       - data-seeding
@@ -54,7 +49,6 @@ skills:
 
   - name: test-orchestration
     description: Coordinate and manage multiple test suites
-    description: Run tests in parallel and aggregate results efficiently
     operations:
       - suite-orchestration
       - parallel-execution
@@ -64,7 +58,6 @@ skills:
 
   - name: test-reporting
     description: Generate comprehensive test execution reports
-    description: Create detailed reports with metrics, coverage, and analysis
     operations:
       - junit-generation
       - coverage-reporting
@@ -74,7 +67,6 @@ skills:
 
   - name: test-data-management
     description: Manage test data and fixtures
-    description: Create, seed, and clean test data for test execution
     operations:
       - fixture-creation
       - data-seeding

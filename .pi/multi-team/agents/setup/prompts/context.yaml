@@ -1,73 +1,82 @@
 # Setup Agent Context
 # This context defines the operational environment and initial state for the setup agent
 
-## Project Overview
-- Project: CodepOS Multi-Agent Orchestration System
-- Purpose: UI generation and validation framework
-- Architecture: Hierarchical agent teams with parent-child supervision
+project:
+  name: "CodepOS Multi-Agent Orchestration System"
+  purpose: "UI generation and validation framework"
+  architecture: "Hierarchical agent teams with parent-child supervision"
 
-## Initial State
-- Multi-team directory: `.pi/multi-team/`
-- Agent directories: `.pi/multi-team/agents/`
-- Team definitions: `.pi/multi-team/teams/`
-- Sessions directory: `.pi/multi-team/sessions/`
+initial_state:
+  directories:
+    - path: ".pi/multi-team/"
+      purpose: "Multi-team directory"
+    - path: ".pi/multi-team/agents/"
+      purpose: "Agent directories"
+    - path: ".pi/multi-team/teams/"
+      purpose: "Team definitions"
+    - path: ".pi/multi-team/sessions/"
+      purpose: "Sessions directory"
 
-## Available Resources
-### Documentation
-- `/home/zerwiz/CodeP/CodepOS/CLAUDE.md`
-- `/home/zerwiz/CodeP/CodepOS/README.md`
-- `/home/zerwiz/CodeP/CodepOS/.pi/multi-team/README.md`
+available_resources:
+  documentation:
+    - path: "/home/zerwiz/CodeP/CodepOS/CLAUDE.md"
+    - path: "/home/zerwiz/CodeP/CodepOS/README.md"
+    - path: "/home/zerwiz/CodeP/CodepOS/.pi/multi-team/README.md"
 
-### Configuration Files
-- `/home/zerwiz/CodeP/CodepOS/.pi/multi-team/multi-team-config.yaml`
-- `/home/zerwiz/CodeP/CodepOS/.pi/multi-team/multi-team-config-min.yaml`
-- `/home/zerwiz/CodeP/CodepOS/.env` (if exists)
+  configuration_files:
+    - path: "/home/zerwiz/CodeP/CodepOS/.pi/multi-team/multi-team-config.yaml"
+    - path: "/home/zerwiz/CodepOS/.pi/multi-team/multi-team-config-min.yaml"
+    - path: "/home/zerwiz/Codep/CodepOS/.env"
+      note: "Optional, loaded if exists"
 
-### Team Definitions
-- `/home/zerwiz/CodeP/CodepOS/.pi/multi-team/teams/*.yaml`
+  team_definitions:
+    path: "/home/zerwiz/CodeP/CodepOS/.pi/multi-team/teams/*.yaml"
 
-### Skills and Expertise
-- Skills: `.pi/multi-team/skills/`
-- Expertise: `.pi/multi-team/expertise/`
-- Hooks: `.pi/multi-team/hooks/`
+  skills_and_expertise:
+    skills:
+      path: ".pi/multi-team/skills/"
+    expertise:
+      path: ".pi/multi-team/expertise/"
+    hooks:
+      path: ".pi/multi-team/hooks/"
 
-## Capabilities
-- Validate project structure
-- Initialize agent teams
-- Load configuration files
-- Manage session state
-- Coordinate team operations
-- Verify dependencies
-- Health check infrastructure
+capabilities:
+  - validate_project_structure
+  - initialize_agent_teams
+  - load_configuration_files
+  - manage_session_state
+  - coordinate_team_operations
+  - verify_dependencies
+  - health_check_infrastructure
 
-## Initial Tasks
-1. Validate `.pi/multi-team/` directory structure
-2. Load and parse `multi-team-config.yaml`
-3. Verify all team definitions in `teams/` directory
-4. Ensure all agent subdirectories are properly initialized
-5. Check for `.env` file and load environment variables
-6. Verify `justfile` contains all necessary team definitions
-7. Create missing agent manifest files if needed
+initial_tasks:
+  - "Validate .pi/multi-team/ directory structure"
+  - "Load and parse multi-team-config.yaml"
+  - "Verify all team definitions in teams/ directory"
+  - "Ensure all agent subdirectories are properly initialized"
+  - "Check for .env file and load environment variables"
+  - "Verify justfile contains all necessary team definitions"
+  - "Create missing agent manifest files if needed"
 
-## Environment Context
-- Working directory: `/home/zerwiz/CodeP/CodepOS`
-- Pi CLI location: `/home/zerwiz/.npm-global/bin/pi`
-- Pi version: v0.70.2
-- OS: Linux
-- Shell: sh
+environment_context:
+  working_directory: "/home/zerwiz/CodeP/CodepOS"
+  pi_cli_location: "/home/zerwiz/.npm-global/bin/pi"
+  pi_version: "v0.70.2"
+  os: "Linux"
+  shell: "sh"
 
-## Agent Communication Protocol
-- Use YAML for agent definitions
-- Use MD5 checksums for integrity tracking (stored in mds/ subdirectories)
-- All agents must read shared_context from multi-team-config.yaml
-- Agents should coordinate through sessions/ directory
+agent_communication_protocol:
+  - "Use YAML for agent definitions"
+  - "Use MD5 checksums for integrity tracking (stored in mds/ subdirectories)"
+  - "All agents must read shared_context from multi-team-config.yaml"
+  - "Agents should coordinate through sessions/ directory"
 
-## Commands Reference
-- `just team <team-name>` - Run a team
-- `just team setup --env VAR=value` - Setup with custom env
-- `just team validation --stage=<stage> --checks=<checks>` - Run validation
+commands_reference:
+  - "just team <team-name> - Run a team"
+  - "just team setup --env VAR=value - Setup with custom env"
+  - "just team validation --stage=<stage> --checks=<checks> - Run validation"
 
-## Status
-- Initialized: true
-- Teams loaded: true
-- Ready to orchestrate: true
+status:
+  initialized: true
+  teams_loaded: true
+  ready_to_orchestrate: true

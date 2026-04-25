@@ -4,7 +4,6 @@
 skills:
   - name: ui-generation
     description: Generate UI components and layouts
-    description: Create responsive, accessible UI components from schemas
     operations:
       - parse_schema
       - generate_component
@@ -13,7 +12,6 @@ skills:
 
   - name: component-creation
     description: Create new UI components
-    description: Generate reusable component libraries and templates
     operations:
       - create_component
       - define_interface
@@ -22,7 +20,6 @@ skills:
 
   - name: schema-validation
     description: Validate UI schemas and structures
-    description: Ensure generated components match schema specifications
     operations:
       - validate_schema
       - check_compliance
@@ -31,7 +28,6 @@ skills:
 
   - name: styling
     description: Apply and manage UI styles
-    description: Handle CSS, Tailwind, and design system integration
     operations:
       - apply_themes
       - manage_responsive
@@ -40,7 +36,6 @@ skills:
 
   - name: integration
     description: Integrate UI components with backends
-    description: Connect generated UIs to API endpoints and services
     operations:
       - bind_api
       - handle_events

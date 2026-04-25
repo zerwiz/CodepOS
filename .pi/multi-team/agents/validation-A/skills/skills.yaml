@@ -3,7 +3,6 @@
 
 skills:
   - name: qa-tests
-    description: Execute automated quality assurance tests
     description: Run and manage test suites for code quality validation
     operations:
       - unit-tests
@@ -12,7 +11,6 @@ skills:
       - smoke-tests
 
   - name: automated-testing
-    description: Orchestrate automated testing pipelines
     description: Execute CI/CD testing workflows and report results
     operations:
       - test-discovery
@@ -21,7 +19,6 @@ skills:
       - failure-analysis
 
   - name: regression-testing
-    description: Perform regression test validation
     description: Verify new changes don't break existing functionality
     operations:
       - test-suite-execution
@@ -30,7 +27,6 @@ skills:
       - status-reporting
 
   - name: integration-testing
-    description: Test system integration points
     description: Validate interactions between components
     operations:
       - api-integration-tests
@@ -39,7 +35,6 @@ skills:
       - end-to-end-scenarios
 
   - name: test-reporting
-    description: Generate test results and reports
     description: Create comprehensive test execution reports
     operations:
       - junit-generation

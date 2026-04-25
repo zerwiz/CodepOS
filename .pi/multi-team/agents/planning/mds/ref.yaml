@@ -34,14 +34,15 @@ ref:
 
   # Reference capabilities
   capabilities:
-    - task-breakdown
-    - dependency-mapping
-    - resource-allocation
-    - risk-assessment
-    - progress-tracking
-    - workflow-optimization
+    skills:
+      - task-breakdown
+      - dependency-mapping
+      - resource-allocation
+      - risk-assessment
+      - progress-tracking
+      - workflow-optimization
 
-  # Integration points
+      # Integration points
   integrations:
     - team: setup
       status: active
@@ -71,7 +72,7 @@ ref:
     retry_count: 3
     sandbox_mode: true
 
-  # Status tracking
+  # Status
   status:
     initialized: true
     ready: true

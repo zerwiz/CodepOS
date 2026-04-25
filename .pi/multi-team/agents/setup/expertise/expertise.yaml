@@ -50,11 +50,13 @@ knowledge:
 
   # External documentation
   documentation:
-    - CLAUDE.md
+    - path: CLAUDE.md
+    - path: README.md
+    - path: ARCHITECTURE_SUMMARY.md
     - README.md
     - ARCHITECTURE_SUMMARY.md
 
-# Communication patterns
+
 communication:
   protocol: yaml
   handshake:
