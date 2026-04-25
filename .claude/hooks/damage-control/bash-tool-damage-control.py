@@ -34,12 +34,17 @@ def expand_path_with_project_root(path: str, project_root: str = "") -> str:
     If path is absolute, return as-is.
     If path is relative (contains / or starts with .), prepend project_root.
     If path is user-tilde (~), expand it.
+    If project_root is None or empty, return the path unchanged.
     """
     # Handle literal tildes
     if path.startswith("~"):
         expanded = os.path.expanduser(path)
     else:
         expanded = path
+
+    # If project_root is None or empty, skip expansion
+    if not project_root:
+        return expanded
 
     # Absolute paths - skip project_root expansion
     if os.path.isabs(expanded):
