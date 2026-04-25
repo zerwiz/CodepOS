@@ -11,28 +11,11 @@ const TEAM_NAME = 'security';
 const MEMORY_FILE = `.pi/state/${TEAM_NAME}-memory.json`;
 const LEARNINGS_FILE = `.pi/state/${TEAM_NAME}-learnings.json`;
 
-interface MemoryEntry {
-  timestamp: number;
-  action: string;
-  result: 'success' | 'failure' | 'partial';
-  details: string;
-  issues_found?: number;
-  issues_fixed?: number;
-}
-
-interface Learning {
-  issue_type: string;
-  attempts: number;
-  successes: number;
-  last_fix?: string;
-  notes: string;
-}
-
-async function saveMemory(entry: MemoryEntry) {
+async function saveMemory(entry) {
   const timestamp = Date.now();
   mkdirSync('.pi/state', { recursive: true });
   
-  let memory: MemoryEntry[] = [];
+  let memory = [];
   try {
     if (existsSync(MEMORY_FILE)) {
       memory = JSON.parse(readFileSync(MEMORY_FILE, 'utf-8'));
@@ -45,36 +28,7 @@ async function saveMemory(entry: MemoryEntry) {
   return memory;
 }
 
-async function saveLearning(issueType: string, success: boolean, fix?: string) {
-  mkdirSync('.pi/state', { recursive: true });
-  
-  let learnings: Learning[] = [];
-  try {
-    if (existsSync(LEARNINGS_FILE)) {
-      learnings = JSON.parse(readFileSync(LEARNINGS_FILE, 'utf-8'));
-    }
-  } catch {}
-  
-  const existing = learnings.find(l => l.issue_type === issueType);
-  
-  if (existing) {
-    existing.attempts++;
-    if (success) existing.successes++;
-    if (fix) existing.last_fix = fix;
-  } else {
-    learnings.push({
-      issue_type: issueType,
-      attempts: 1,
-      successes: success ? 1 : 0,
-      last_fix: fix,
-      notes: ''
-    });
-  }
-  
-  writeFileSync(LEARNINGS_FILE, JSON.stringify(learnings, null, 2));
-}
-
-async function loadLearnings(): Promise<Learning[]> {
+async function loadLearnings() {
   if (!existsSync(LEARNINGS_FILE)) return [];
   try {
     return JSON.parse(readFileSync(LEARNINGS_FILE, 'utf-8'));
@@ -83,7 +37,7 @@ async function loadLearnings(): Promise<Learning[]> {
   }
 }
 
-async function getLearningContext(): Promise<string> {
+async function getLearningContext() {
   const learnings = await loadLearnings();
   if (learnings.length === 0) return '';
   
@@ -95,8 +49,8 @@ async function getLearningContext(): Promise<string> {
   return `\n\n**Learning from past runs:**\n${lines.join('\n')}`;
 }
 
-async function getRecentHistory(): Promise<string> {
-  let memory: MemoryEntry[] = [];
+async function getRecentHistory() {
+  let memory = [];
   try {
     if (existsSync(MEMORY_FILE)) {
       memory = JSON.parse(readFileSync(MEMORY_FILE, 'utf-8'));
@@ -112,29 +66,28 @@ async function getRecentHistory(): Promise<string> {
 
 console.log("\n🛡️ Security Team\n" + "─".repeat(40));
 
-// Get context from past runs
-const learningContext = await getLearningContext();
-const historyContext = await getRecentHistory();
+async function main() {
+  const learningContext = await getLearningContext();
+  const historyContext = await getRecentHistory();
 
-console.log("📡 Step 1: Running sentinel scanner...\n");
+  console.log("📡 Step 1: Running sentinel scanner...\n");
 
-// Step 1: Run scanner
-const scannerProc = spawn('bun', ['run', '.pi/multi-team/agents/sentinel/index.mjs'], {
-  cwd: process.cwd(),
-  stdio: 'inherit'
-});
-
-scannerProc.on('close', async (code) => {
-  await saveMemory({
-    action: 'scanner_run',
-    result: code === 0 ? 'success' : 'failure',
-    details: 'Sentinel scanner completed',
-    issues_found: 0 // Would need to parse output
+  const scannerProc = spawn('bun', ['run', '.pi/multi-team/agents/sentinel/index.mjs'], {
+    cwd: process.cwd(),
+    stdio: 'inherit'
   });
-  
-  console.log("\n🤖 Step 2: LLM Team Leader analyzing...\n");
-  
-  const analysisPrompt = `You are the Security Team Leader with memory of past work.
+
+  scannerProc.on('close', async (code) => {
+    await saveMemory({
+      action: 'scanner_run',
+      result: code === 0 ? 'success' : 'failure',
+      details: 'Sentinel scanner completed',
+      issues_found: 0
+    });
+    
+    console.log("\n🤖 Step 2: LLM Team Leader analyzing...\n");
+    
+    const analysisPrompt = `You are the Security Team Leader with memory of past work.
 
 Analyze the security scan results above. For each issue:
 1. Identify the type (sql, hardcoded, dangerous, secrets)
@@ -150,22 +103,22 @@ Provide a structured report:
 - Suggested fixes (prefer approaches that worked before)
 - Estimated effort`;
 
-  const leaderProc = spawn('pi', ['-p', analysisPrompt], {
-    cwd: process.cwd(),
-    stdio: 'inherit'
-  });
-  
-  leaderProc.on('close', async (code) => {
-    await saveMemory({
-      action: 'analysis_complete',
-      result: 'success',
-      details: 'LLM analysis finished'
+    const leaderProc = spawn('pi', ['-p', analysisPrompt], {
+      cwd: process.cwd(),
+      stdio: 'inherit'
     });
     
-    console.log("\n✅ Security team task complete!");
-    console.log("\n💡 To track a fix worked, run:");
-    console.log("   just memory:track security '<issue-type>' '<what-you-did>'");
-    
-    process.exit(code || 0);
+    leaderProc.on('close', async (code) => {
+      await saveMemory({
+        action: 'analysis_complete',
+        result: 'success',
+        details: 'LLM analysis finished'
+      });
+      
+      console.log("\n✅ Security team task complete!");
+      process.exit(code || 0);
+    });
   });
-});
+}
+
+main();

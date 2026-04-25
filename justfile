@@ -2,54 +2,87 @@
 # Harness for www.pi.dev
 
 # =========================
+# TERMINAL UI (pi-subagents style)
+# =========================
+
+ui *args:
+    @bun run .pi/multi-team/ui/terminal.mjs {{args}}
+
+# =========================
 # SCANNERS (no LLM - fast scripts)
 # =========================
 
 scanner name *args:
     @echo "🔍 Running scanner: {{name}}..."
-    @if [ -f ".pi/multi-team/agents/{{name}}/index.mjs" ]; then \
-        bun run .pi/multi-team/agents/{{name}}/index.mjs {{args}}; \
+    @if [ -f ".pi/multi-team/scanners/{{name}}/index.mjs" ]; then \
+        bun run .pi/multi-team/scanners/{{name}}/index.mjs {{args}}; \
     else \
         echo "❌ Scanner '{{name}}' not found"; \
-        echo "Available: scout, sentinel, librarian, mapper"; \
+        echo "Available: scout, sentinel, librarian, mapper, indexer"; \
         exit 1; \
     fi
 
 scout:
-    bun run .pi/multi-team/agents/scout/index.mjs
+    bun run .pi/multi-team/scanners/scout/index.mjs
 
 sentinel:
-    bun run .pi/multi-team/agents/sentinel/index.mjs
+    bun run .pi/multi-team/scanners/sentinel/index.mjs
 
 librarian:
-    bun run .pi/multi-team/agents/librarian/index.mjs
+    bun run .pi/multi-team/scanners/librarian/index.mjs
 
 mapper:
-    bun run .pi/multi-team/agents/mapper/index.mjs
+    bun run .pi/multi-team/scanners/mapper/index.mjs
+
+indexer:
+    bun run .pi/multi-team/scanners/indexer/index.mjs
 
 # =========================
-# TEAM LEADERS (LLM-powered via pi.dev)
+# AGENTS (LLM-powered via pi.dev)
 # =========================
 
-leader name *task:
-    @echo "🤖 Running LLM Team Leader: {{name}}..."
-    @if [ -z "{{task}}" ]; then \
-        echo "Usage: just leader <name> <task>"; \
+codepos-agent name *args:
+    @echo "🤖 Running agent: {{name}}..."
+    @if [ -f ".pi/multi-team/council/{{name}}/index.mjs" ]; then \
+        bun run .pi/multi-team/council/{{name}}/index.mjs {{args}}; \
+    else \
+        echo "Available agents: planning, dokumenter"; \
         exit 1; \
     fi
-    @pi -p "{{task}}"
 
-leader:security:
-    pi -p "You are the Security Team Leader. Analyze security scan results and provide remediation guidance."
+plan-task:
+    bun run .pi/multi-team/council/planning/index.mjs
 
-leader:analysis:
-    pi -p "You are the Analysis Team Leader. Review codebase analysis and provide insights."
+generate-doc:
+    bun run .pi/multi-team/council/dokumenter/index.mjs README
 
-leader:review:
-    pi -p "You are the Code Review Team Leader. Analyze code patterns and suggest improvements."
+council:
+    @echo "🏛️ Council Leader"
+    @echo "Available commands: just council help"
+    bun run .pi/multi-team/council/council.mjs
+
+council-coordinator:
+    @echo "🏛️ Council Coordinator Mode"
+    bun run .pi/multi-team/council/council.mjs coordinator
+
+council-analyze:
+    @echo "🏛️ Council Analyze Mode"
+    bun run .pi/multi-team/council/council.mjs analyze scout
+
+council-security:
+    @echo "🏛️ Council Security Mode"
+    bun run .pi/multi-team/council/council.mjs security
+
+council-list:
+    @echo "🏛️ Council Agent List"
+    bun run .pi/multi-team/council/council.mjs list
+
+council-clear:
+    @echo "🏛️ Council Clear"
+    bun run .pi/multi-team/council/council.mjs clear
 
 # =========================
-# TEAMS (Scanner + LLM Leader)
+# TEAMS (Scanner + LLM Agents)
 # =========================
 
 team name *args:
@@ -58,79 +91,50 @@ team name *args:
         bun run .pi/multi-team/teams/{{name}}/index.mjs {{args}}; \
     else \
         echo "❌ Team '{{name}}' not found"; \
-        ls .pi/multi-team/teams/ 2>/dev/null || echo "No teams"; \
+        echo "Available: main, security"; \
         exit 1; \
     fi
 
+main mode:
+    @echo "🔄 Main Team - Multi-Agent Pipeline"
+    bun run .pi/multi-team/teams/main/index.mjs {{mode}}
+
 security:
-    @echo "🛡️ Security Team (Scanner + LLM Leader)"
-    @echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    @echo "🛡️ Security Team"
     bun run .pi/multi-team/teams/security/index.mjs
 
 # =========================
-# MEMORY (learning from past runs)
+# MEMORY
 # =========================
 
-# View memory for a team/leader
 memory name:
     @echo "📝 Memory for: {{name}}"
-    @echo "━━━━━━━━━━━━━━━━━━━━━"
     @if [ -f ".pi/state/{{name}}-memory.json" ]; then \
-        echo "Recent sessions:"; \
         cat .pi/state/{{name}}-memory.json | tail -10; \
     else \
         echo "(no memory yet)"; \
     fi
-    @echo ""
-    @if [ -f ".pi/state/{{name}}-learnings.json" ]; then \
-        echo "What worked:"; \
-        cat .pi/state/{{name}}-learnings.json; \
-    else \
-        echo "(no learnings yet)"; \
-    fi
 
-# View learnings only
-learnings name:
-    @echo "📚 Learnings for: {{name}}"
-    @if [ -f ".pi/state/{{name}}-learnings.json" ]; then \
-        cat .pi/state/{{name}}-learnings.json; \
-    else \
-        echo "(no learnings yet)"; \
-    fi
-
-# Track that a fix worked
-memory:worked team issue_type fix:
-    @echo "💡 Recording successful fix..."
-    @mkdir -p .pi/state
-    @if [ -f ".pi/state/{{team}}-learnings.json" ]; then \
-        cat .pi/state/{{team}}-learnings.json | python3 -c "import sys,json; d=json.load(sys.stdin); d.append({'issue_type':'{{issue_type}}','attempts':1,'successes':1,'last_fix':'{{fix}}','notes':''}); print(json.dumps(d))" > .pi/state/{{team}}-learnings.json.tmp && mv .pi/state/{{team}}-learnings.json.tmp .pi/state/{{team}}-learnings.json; \
-    else \
-        echo '[{"issue_type":"{{issue_type}}","attempts":1,"successes":1,"last_fix":"{{fix}}","notes":""}]' > .pi/state/{{team}}-learnings.json; \
-    fi
-    @echo "✅ Recorded: {{issue_type}} - {{fix}}"
-
-# Clear memory
-memory:clear name:
+memory-clear name:
     @rm -f .pi/state/{{name}}-memory.json .pi/state/{{name}}-learnings.json
-    @echo "✅ Memory cleared for {{name}}"
+    @echo "✅ Memory cleared"
 
 # =========================
-# ORCHESTRATION
+# ORCHESTRATOR (talks to Council)
 # =========================
 
-orchestrate: council-overview design testing api-backend ui-components integration database frontend planning setup security-scan
+orchestrate *args:
+    @if [ -z "{{args}}" ]; then \
+        bun run .pi/multi-team/orchestrator/index.mjs help; \
+    else \
+        bun run .pi/multi-team/orchestrator/index.mjs {{args}}; \
+    fi
 
 council-overview:
     @echo "🏛️  === CodepOS System ==="
-    @echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     @echo "Scanners: scout, sentinel, librarian, mapper"
-    @echo "Leaders: security, analysis, review"
-    @echo "Teams: security (scanner + leader)"
-    @echo "Memory: just memory <name>"
-    @echo ""
-
-test: testing
-    @echo "✅ Aliased to testing"
+    @echo "Council: coordinator, analyze, security (LLM-powered)"
+    @echo "Teams: security"
 
 design:
     @echo "🎨 === Design System ==="
@@ -161,15 +165,8 @@ setup:
 
 security-scan:
     @echo "🛡️  === Security ==="
-    @echo "  - Team: just team security"
-    @echo "  - Memory: just memory security"
-    @echo "  - Track fix: just memory:worked security '<type>' '<fix>'"
-
-pi-status:
-    bun run .pi/multi-team/ui/terminal.mjs
-
-pi-watch:
-    bun run .pi/multi-team/ui/terminal.mjs watch
+    @echo "  just scanner sentinel"
+    @echo "  just council-security"
 
 init: setup
     @echo "✅ CodepOS init complete!"
@@ -177,6 +174,3 @@ init: setup
 clean:
     rm -rf .codepos/database/database.db
     @echo "🧹 Cleaned temporary files"
-
-watch:
-    @echo "👁️  Watching for changes..."

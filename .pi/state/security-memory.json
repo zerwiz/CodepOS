@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "action": "scanner_run",
+    "result": "success",
+    "details": "Sentinel scanner completed",
+    "issues_found": 0,
+    "timestamp": 1777088862769
+  },
+  {
+    "action": "analysis_complete",
+    "result": "success",
+    "details": "LLM analysis finished",
+    "timestamp": 1777088864197
+  }
+]

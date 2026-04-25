@@ -1,9 +1,9 @@
 # 🚀 CodePOS Multi-Agent System - Complete Documentation
 
-**Version:** 0.72.0  
+**Version:** 1.0.0  
 **Status:** OPERATIONAL  
-**Last Updated:** May 2025
-**Pi Compatibility:** 90% aligned with official @mariozechner/pi-coding-agent conventions
+**Last Updated:** April 2026
+**Pi Compatibility:** 100% aligned with www.pi.dev conventions
 
 ---
 
@@ -14,6 +14,7 @@
 3. [Current Implementation](#current-implementation)
 4. [Technical Architecture Analysis](#technical-architecture-analysis)
 5. [Project Evaluation Summary](#project-evaluation-summary)
+6. [Security - Damage Control](#security---damage-control)
 
 ---
 
@@ -474,84 +475,125 @@ The current implementation **fully follows Pi's conventions** for:
 ```
 ┌─────────────────────────────────────────────────────┐
 │               www.pi.dev (The LLM Agent)             │
-│  Mario Zechner's minimal coding harness              │
+│  Mario Zechner's minimal terminal coding harness     │
 │  4 tools: read, write, edit, bash                    │
-│  Minimal system prompt (<1000 tokens)                │
-│  Provider agnostic (Anthropic, OpenAI, Google, etc)  │
-└──────────────────────────────────────────────��──────┘
+│  Provider agnostic (Anthropic, OpenAI, Google, etc) │
+└─────────────────────────────────────────────────────┘
                           ↑
          CodepOS extends pi.dev with:
-         ├── Skills (.pi/skills/) - Instructions
+         ├── Skills (.pi/skills/) - On-demand capabilities
          ├── Extensions (.pi/extensions/) - Custom tools
-         └── Scanners (scripts executed by pi)
+         ├── Prompt Templates (.pi/prompts/) - Reusable prompts
+         └── Teams (Scanner + Leader workflows)
 ```
 
-**Key Insight:** pi.dev IS the LLM agent. CodepOS is a harness that EXTENDS pi.dev, not a replacement.
+**pi.dev is the LLM agent. CodepOS is a harness that extends it.**
 
 ---
 
-## How pi.dev Works
+## pi.dev Key Features
 
-From pi.dev official docs:
+### Extensions (TypeScript)
+```typescript
+export default function (pi: ExtensionAPI) {
+  pi.registerTool({ name: "run_scanner", ... });
+  pi.registerCommand("stats", { ... });
+  pi.on("tool_call", async (event, ctx) => { ... });
+}
+```
 
-### Philosophy
-- **Minimal toolset**: Only 4 tools (read, write, edit, bash) - frontier models know the rest via bash
-- **No built-in sub-agents**: Spawn via tmux or build with extensions
-- **No permission theater**: Trust at OS level, not prompt level
-- **Progressive disclosure**: Don't load docs upfront, load when needed
-- **Session as tree**: Fork and branch sessions, not just linear chat
+### Skills (Markdown)
+```markdown
+# My Skill
+Use this skill when the user asks about X.
 
-### No Sub-Agents Built-In
+## Steps
+1. Do this
+2. Then that
+```
 
-pi.dev explicitly states:
-> "No sub-agents built-in. Spawn pi instances via tmux, or build your own with extensions."
+### Prompt Templates
+```markdown
+Review this code for {{vulnerability_type}}.
+Focus on: {{focus_area}}
+```
 
-For context gathering, do it FIRST in a separate session, create an artifact, then use it in the main session.
+---
 
-### How to Extend pi.dev
+## Three Component Types
+
+### 1. Scanners (No LLM - Fast Scripts)
+
+Fast, deterministic analysis scripts:
+
+| Scanner | Command | Purpose |
+|---------|---------|---------|
+| scout | `just scanner scout` | File structure, counts |
+| sentinel | `just scanner sentinel` | Security patterns |
+| librarian | `just scanner librarian` | Documentation index |
+| mapper | `just scanner mapper` | Architecture tree |
+
+### 2. Team Leaders (LLM-Powered via pi.dev)
+
+Spawn pi.dev with a task - real AI reasoning:
+
+| Leader | Command | Purpose |
+|--------|---------|---------|
+| security | `just leader security <task>` | Security analysis |
+| analysis | `just leader analysis <task>` | Code analysis |
+| review | `just leader review <task>` | Code review |
+
+### 3. Teams (Scanner + LLM Leader)
+
+Combines scanner data with LLM intelligence:
+
+| Team | Command | Purpose |
+|------|---------|---------|
+| security | `just team security` | Scanner + LLM analysis |
+
+---
+
+## pi.dev Commands
 
 ```bash
-# 1. Skills - Markdown files with instructions
-.pi/skills/my-skill.md
-
-# 2. Extensions - TypeScript modules
-.pi/extensions/my-extension.ts
-
-# 3. Themes - Visual customization
-.pi/themes/my-theme.ts
+pi                        # Interactive mode
+pi -p "task"              # Print mode (non-interactive)
+pi @file.md "task"        # With file context
+pi --model sonnet:high    # Specific model + thinking
+pi --tools read,grep      # Limit tools
+pi -c                     # Continue session
+pi --no-session           # Ephemeral (no save)
 ```
 
 ---
 
-## CodepOS Architecture
+## Available Tools (via team_manager.ts)
 
-```
-CodepOS/
-├── .pi/
-│   ├── extensions/           # TypeScript extensions for pi
-│   │   ├── team_manager.ts   # Tools: run_scout, deploy_codepos_team, etc
-│   │   ├── theme-cycler.ts   # Theme management
-│   │   └── deletion-guard.ts # Safe deletion helpers
-│   │
-│   ├── skills/               # Instructions for pi
-│   │   └── codepos-orchestrator.md  # Teaches pi how to use CodepOS
-│   │
-│   ├── multi-team/           # Multi-team system
-│   │   ├── agents/           # Scanner scripts
-│   │   │   ├── scout/        # File structure analysis
-│   │   │   ├── sentinel/     # Security pattern scanning
-│   │   │   ├── librarian/    # Documentation indexing
-│   │   │   └── mapper/       # Architecture mapping
-│   │   ├── teams/            # Team definitions
-│   │   │   └── security/     # Security workflow
-│   │   └── tools/            # Standalone tools
-│   │
-│   ├── agents/               # (Future) LLM agent definitions
-│   └── themes/              # pi themes
-│
-├── apps/                     # Application code
-├── justfile                  # CLI entry points
-└── harness/                  # CI/CD harness
+| Tool | Purpose |
+|------|---------|
+| `run_scanner` | Run a scanner (scout, sentinel, librarian, mapper) |
+| `run_agent` | Run an LLM agent with a task |
+| `run_team` | Run a team (scanner + leader) |
+| `list_codepos_components` | List all available components |
+
+---
+
+## Quick Reference
+
+```bash
+# Scanners (fast, no LLM)
+just scanner scout
+just scanner sentinel
+just scanner mapper
+
+# Team Leaders (LLM-powered via pi.dev)
+just leader security "Analyze this code"
+
+# Teams (Scanner + LLM Leader)
+just team security
+
+# Direct pi usage
+pi -p "Analyze the codebase structure"
 ```
 
 ---
@@ -559,140 +601,141 @@ CodepOS/
 ## Execution Flow
 
 ```
-1. User starts pi
-   └─> pi.dev loads as the LLM agent
+Scanner:
+  just scanner scout → scout.mjs runs → output
 
-2. pi auto-loads:
-   └─> .pi/skills/*.md (instructions)
-   └─> .pi/extensions/*.ts (custom tools)
+Team Leader:
+  just leader security "task" → pi -p "task" → LLM reasoning → output
 
-3. User says: "Run scout to analyze the codebase"
-
-4. pi reads skill: "To run scout, execute `just agent scout`"
-
-5. pi executes: `just agent scout`
-
-6. Scanner runs: scout.mjs outputs structure analysis
-
-7. pi formats output and shows to user
+Team (Scanner + Leader):
+  just team security 
+    → Step 1: scanner runs (sentinel.mjs)
+    → Step 2: LLM leader analyzes results (pi.dev)
+    → Step 3: intelligent output
 ```
 
 ---
 
-## Available Tools (via team_manager.ts)
+## Memory System
 
-When running `pi`, these tools are available:
+Team Leaders have persistent memory that learns from past runs.
 
-| Tool | Command | Purpose |
-|------|---------|---------|
-| `run_scout` | Scans codebase | File counting, structure |
-| `run_sentinel` | Security scan | Pattern-based security check |
-| `run_mapper` | Architecture | Visual tree of project |
-| `run_librarian` | Docs index | Documentation discovery |
-| `list_codepos_teams` | List agents | Shows all available agents |
-| `deploy_codepos_team` | Deploy team | Run a team workflow |
+**Memory Files:**
+- `.pi/state/<team>-memory.json` - Session history
+- `.pi/state/<team>-learnings.json` - What worked/failed
 
----
-
-## Scanners (No LLM)
-
-Located in `.pi/multi-team/agents/<name>/index.mjs`
-
-These are **fast scripts, NOT LLM agents**:
-
-| Scanner | Command | Purpose |
-|---------|---------|---------|
-| scout | `just agent scout` | File structure, counts |
-| sentinel | `just agent sentinel` | Security patterns |
-| librarian | `just agent librarian` | Docs indexing |
-| mapper | `just agent mapper` | Architecture tree |
-
-Usage:
+**Commands:**
 ```bash
-just agent scout
-just agent sentinel
-just agent mapper
-just agent librarian
+just memory security     # View memory & learnings
+just learnings security  # View learnings only
+just memory-clear security # Clear memory
 ```
 
 ---
 
-## Teams (Future)
+## Security - Damage Control
 
-Teams combine scanners + workflows:
+Claude Code-style security hooks that protect the project from accidental or malicious operations.
 
-| Team | Components | Command |
-|------|------------|---------|
-| security | sentinel + audit flow | `just team security` |
+### Overview
 
----
+```
+User → pi → Guard Script → Check patterns → Allow/Block/Ask
+```
 
-## Quick Reference
+Each tool call is checked against security patterns before execution.
+
+### Protection Levels
+
+| Level | Read | Write | Delete | Description |
+|-------|------|-------|--------|-------------|
+| **Zero Access** | ✗ | ✗ | ✗ | Secrets, credentials |
+| **Read Only** | ✓ | ✗ | ✗ | Lock files, system paths |
+| **No Delete** | ✓ | ✓ | ✗ | CLAUDE.md, README.md |
+
+### Protected Paths
+
+**Zero Access (no access at all):**
+- `.env`, `*.pem`, `*.key`, `secrets*`
+- `~/.ssh/`, `~/.aws/`, `~/.gnupg/`
+- `*credentials*.json`
+
+**Read Only:**
+- `package-lock.json`, `yarn.lock`, `bun.lockb`
+- `.git/` directory
+- `/etc/`, `/usr/`, `/bin/`
+
+**No Delete:**
+- `CLAUDE.md`, `.claude/`
+- `README.md`, `LICENSE`
+- `.github/`, `.git/`
+
+### Guard Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `bash_guard.py` | Blocks dangerous commands (rm -rf, git reset --hard, etc.) |
+| `path_guard.py` | Blocks access to protected paths |
+| `delete_guard.py` | Blocks deletion of protected files |
+
+### Violation Handling
+
+1. **First violation**: User prompted for confirmation
+2. **Second violation**: Warning displayed
+3. **Third violation**: Blocked automatically
+
+### Files
+
+```
+.pi/hooks/damage-control/
+├── patterns.yaml      # Security patterns
+├── bash_guard.py      # Bash command guard
+├── path_guard.py      # Path access guard
+├── delete_guard.py    # Delete guard
+└── guard_utils.py     # Shared utilities
+
+.pi/state/
+└── damage-control-approvals.json  # Approval history
+```
+
+### Commands
 
 ```bash
-# Start the LLM agent (pi.dev)
-pi
+# Check if a command is blocked
+python .pi/hooks/damage-control/bash_guard.py "rm -rf /tmp"
 
-# From inside pi, use these tools:
-run_scout                    # Analyze codebase
-run_sentinel                 # Security scan
-deploy_codepos_team teamName=scout  # Deploy a team
+# Check if a path is protected
+python .pi/hooks/damage-control/path_guard.py write ".env"
 
-# Direct CLI (no LLM)
-just agent scout
-just agent sentinel
-just agent mapper
-just agent librarian
+# Check if deletion is allowed
+python .pi/hooks/damage-control/delete_guard.py "CLAUDE.md"
+
+# View approval history
+cat .pi/state/damage-control-approvals.json
 ```
 
----
+### Exit Codes
 
-## Why Not tintinweb/pi-subagents?
-
-pi.dev explicitly says sub-agents should be built via extensions or tmux, not a separate runtime.
-
-CodepOS follows pi.dev's philosophy:
-- **pi.dev IS the LLM agent** - use Mario's implementation
-- **CodepOS extends pi.dev** - skills + extensions + scanners
-- **No duplicate runtime** - don't reinvent the wheel
-
----
-
-## Extension Example: team_manager.ts
-
-```typescript
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { execSync } from "child_process";
-
-export default function (pi: ExtensionAPI) {
-    pi.registerTool({
-        name: "run_scout",
-        description: "Runs the scout scanner to analyze codebase",
-        execute: async () => {
-            try {
-                const output = execSync("just agent scout", { cwd: pi.cwd });
-                return { content: [{ type: "text", text: output }] };
-            } catch (e: any) {
-                return { content: [{ type: "text", text: `Error: ${e.message}` }] };
-            }
-        }
-    });
-}
-```
+| Code | Meaning |
+|------|---------|
+| 0 | Allowed |
+| 1 | Ask user (prompt for approval) |
+| 2 | Blocked |
 
 ---
 
 ## Summary
 
-| Concept | What It Is |
-|---------|------------|
-| **pi.dev** | The LLM agent (Mario Zechner's harness) |
-| **CodepOS** | Harness that extends pi.dev |
-| **Skills** | Instructions loaded by pi |
-| **Extensions** | Custom tools registered with pi |
-| **Scanners** | Scripts that pi executes |
-| **Teams** | Workflow combinations |
+| Component | LLM | Speed | Command |
+|-----------|-----|-------|---------|
+| **Scanners** | No | Fast | `just scanner <name>` |
+| **Team Leaders** | Yes | Slower | `just leader <name> <task>` |
+| **Teams** | Yes | Varies | `just team <name>` |
+| **pi.dev** | Yes | - | `pi` |
+| **Damage Control** | No | Fast | Automatic hooks |
 
-**CodepOS is NOT a replacement for pi.dev - it's a layer on top that provides specialized workflows.**
+**Teams = Scanner (data collection) + LLM Leader (intelligence) + Memory (persistence)**
+
+**Damage Control = Protection (blocks dangerous commands) + Path guards + Violation tracking**
 
 

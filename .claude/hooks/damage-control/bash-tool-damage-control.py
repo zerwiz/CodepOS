@@ -45,15 +45,17 @@ def process_bash_command(input_data: Dict[str, Any], config: Dict[str, Any], pro
         if project_root is None:
             project_root = PROJECT_ROOT
         extracted_paths = extract_paths_from_command(command, str(project_root))
-        for path in extracted_paths:
-            path_type = get_path_type(path, command, config)
-            if path_type and path_type != "normal":
-                if path_type == ZERO_ACCESS_BLOCKED:
-                    return {"error": f"{tool_name}: blocked by zero-access restriction", "result": False}
-                elif path_type == READ_ONLY_BLOCKED:
-                    return {"error": f"{tool_name}: path is read-only", "result": False}
-                elif path_type == NO_DELETE_BLOCKED:
-                    return {"error": f"{tool_name}: path is no-delete", "result": False}
+        for orig_path in extracted_paths:
+            # Check both the original path (with ~) and expanded path against patterns
+            for check_path in [orig_path, expand_path_with_project_root(orig_path, str(project_root))]:
+                path_type = get_path_type(check_path, command, config)
+                if path_type and path_type != "normal":
+                    if path_type == ZERO_ACCESS_BLOCKED:
+                        return {"error": f"{tool_name}: blocked by zero-access restriction", "result": False}
+                    elif path_type == READ_ONLY_BLOCKED:
+                        return {"error": f"{tool_name}: path is read-only", "result": False}
+                    elif path_type == NO_DELETE_BLOCKED:
+                        return {"error": f"{tool_name}: path is no-delete", "result": False}
         if DEBUG:
             print(f"DEBUG: Command passed: {command}", file=sys.stderr)
         return {"error": None, "result": True}

@@ -1,0 +1,20 @@
+{
+  "approved": {},
+  "violations": {
+    "0ae377da5652": {
+      "command": "rm -rf /tmp",
+      "reason": "rm with recursive or force flags",
+      "count": 3,
+      "first": "2026-04-25T07:21:51.136366",
+      "last": "2026-04-25T07:21:56.462266"
+    },
+    "e1eca148d272": {
+      "path": ".env",
+      "mode": "write",
+      "reason": "Zero access: .env",
+      "count": 1,
+      "first": "2026-04-25T07:21:51.177234",
+      "last": "2026-04-25T07:21:51.177243"
+    }
+  }
+}

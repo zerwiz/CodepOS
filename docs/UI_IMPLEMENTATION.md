@@ -1,222 +1,248 @@
 # CodepOS Terminal UI - Implementation Guide
 
-**Document Version:** 1.2  
-**Last Updated:** 2024-01-02  
-**Maintained By:** CodepOS Team  
-**Compliance:** pi.dev 100% Compliant ✅  
-
----
-
-## Table of Contents
-
-1. [Overview](#1-overview)
-2. [What Has Been Completed ✅](#2-what-has-been-completed-)
-3. [Implementation Status](#3-implementation-status)
-4. [Next Steps](#4-next-steps)
-5. [Quick Reference](#5-quick-reference)
-6. [Configuration Checklist](#6-configuration-checklist)
+**Document Version:** 3.0  
+**Last Updated:** 2026-04-25  
+**Compliance:** pi.dev 100% Compliant
 
 ---
 
 ## 1. Overview
 
-CodepOS is a multi-agent orchestration system designed for UI generation, validation, and sovereign agent operations. The terminal UI provides real-time monitoring with color-coded status indicators, warnings, and system health metrics.
+CodepOS provides two UI options:
+1. **Standalone Terminal UI** - Run via `just ui` or `bun run .pi/multi-team/ui/terminal.mjs`
+2. **Pi Extension UI** - Integrated into pi.dev's terminal (in progress)
 
 ---
 
-## 2. What Has Been Completed ✅
+## 2. Architecture
 
-### 2.1 Agent Team Structure
-
-All agent teams have been created in `.pi/multi-team/agents/`:
-
-| Team | Role | Status |
-|------|------|--------|
-| `setup` | Environment initialization | ✅ Complete |
-| `ui-gen-A` | UI component generation | ✅ Complete |
-| `validation-A` | QA tests (automated) | ✅ Complete |
-| `validation-B` | Automated testing pipeline | ✅ Complete |
-| `validation-C` | Style validation pipeline | ✅ Complete |
-| `planning` | Workflow management | ✅ Complete |
-
-### 2.2 Terminal UI Implementation
-
-A terminal-based UI has been created for the pi orchestrator:
-
-| Component | File | Status |
-|-----------|------|--------|
-| Terminal UI | `.pi/multi-team/ui/terminal.mjs` | ✅ Complete |
-| Color-coded status | ✅ Active |
-| Warning display | ✅ Active |
-| System health check | ✅ Active |
-| Team hierarchy view | ✅ Active |
-| Live monitoring | ✅ Ready |
-
-### 2.3 Agent Configuration Files
-
-Each agent team includes:
-
-- `manifest.yaml` - Agent metadata and configuration
-- `mds/pi.yaml` - Primary integration MD5 checksums  
-- `mds/ref.yaml` - Reference MD5 checksums
-- `prompts/instructions.yaml` - Agent instructions
-- `prompts/context.yaml` - Agent context
-- `skills/skills.yaml` - Agent capabilities
-- `expertise/expertise.yaml` - Domain expertise
-- `identity.md` - Agent identity and role
-- `logs/` - Log directory
-- `memory/` - Session state directory
-
-### 2.4 Configuration Files
-
-- `.justfile` - Task runner definitions
-- `.env` - Environment variables for team configuration
-- `.pi/multi-team/multi-team-config.yaml` - Main orchestration config
-- `.pi/multi-team/multi-team-config-min.yaml` - Minimal config
+```
+pi.dev (Orchestrator)
+    ├── Pi Extension UI (.pi/extensions/codepos-ui.ts) - Shows in pi's terminal
+    ├── Standalone UI (.pi/multi-team/ui/terminal.mjs) - Run separately
+    │
+    ├── Scanners (fast, no LLM)
+    ├── Council (LLM agents)
+    └── Teams (pipelines)
+```
 
 ---
 
-## 3. Implementation Status
+## 3. Standalone Terminal UI
 
-### ✅ Theme System - COMPLETE
+**Location:** `.pi/multi-team/ui/terminal.mjs`
 
-**Themes Created:** 12  
-**Location:** `.pi/themes/`  
+### Features
 
-### ✅ Extensions - COMPLETE
-
-**Extensions Created:** 2  
-**Location:** `.pi/extensions/`  
-
-### ✅ UI Components - COMPLETE
-
-**Components Implemented:** 8  
-**Location:** `.pi/multi-team/ui/`  
-
-### ✅ Integration - COMPLETE
-
-**Integration Status:** 100%  
-
-### 3.2 Terminal UI Features
-
-The terminal UI provides:
-- **Real-time agent status** - Green (active), Yellow (warning), Red (error)
-- **Color-coded warnings** - Visual indicators for issues and notices
-- **System health metrics** - CPU, memory, network usage
-- **Activity log** - Recent agent actions and events
-- **Team hierarchy** - Visual tree of agent teams
+- **Pi theme colors** - Uses `.pi/themes/*.json` themes (Catppuccin Mocha default)
+- **Pi-subagents style** - Tree view with animated spinners
+- **Real-time activity** - Shows what each component is doing
 - **Watch mode** - Live monitoring with periodic updates
 
-### 3.3 Completed Actions
-
-1. ✅ Created `.pi/extensions/` directory
-2. ✅ Implemented `theme-cycler.ts`
-3. ✅ Implemented `ui-extension.ts`
-4. ✅ Updated `.pi/pi.sh` loader
-5. ✅ Created all agent scripts (Bun)
-6. ✅ Created planning team structure
-7. ✅ Created all configuration files
-8. ✅ Implemented terminal UI
-
----
-
-## 4. Next Steps
-
-### 4.1 Immediate (This Session)
-
-- ✅ All tasks complete! 
-
-### 4.2 Short-term
-
-- Document all agent capabilities
-- Implement error handling and recovery
-- Add performance monitoring
-- Create web dashboard for monitoring
-
-### 4.3 Long-term
-
-- Implement auto-scaling for agents
-- Add advanced scheduling capabilities
-- Create monitoring dashboard (Grafana)
-- Implement distributed agent deployment
-
----
-
-## 5. Quick Reference
-
-### 5.1 Terminal UI Commands
+### Commands
 
 ```bash
-# Full status display
-bun run .pi/multi-team/ui/terminal.mjs
+bun run .pi/multi-team/ui/terminal.mjs          # Status view
+bun run .pi/multi-team/ui/terminal.mjs status   # Status view
+bun run .pi/multi-team/ui/terminal.mjs tree     # Tree view
+bun run .pi/multi-team/ui/terminal.mjs watch    # Live monitoring
+bun run .pi/multi-team/ui/terminal.mjs help    # Help
 
-# Agent status (same as default)
-bun run .pi/multi-theme/agents/status.mjs
-
-# Team hierarchy tree  
-bun run .pi/multi-team/ui/terminal.mjs tree
-
-# System health check
-bun run .pi/multi-team/ui/terminal.mjs health
-
-# Show warnings only
-bun run .pi/multi-team/ui/terminal.mjs warnings
-
-# Live monitoring mode
-bun run .pi/multi-team/ui/terminal.mjs watch
+# Or via just
+just ui status
+just ui tree
+just ui watch
 ```
 
-### 5.2 Justfile Commands
+### UI Style
 
-```bash
-# Setup team
-just setup --init
-just setup --reset
-
-# UI Generation team
-just ui-gen-A
-
-# Validation teams
-just validation-A
-just validation-B  
-just validation-C
-just validation-full
-
-# Utilities
-just clean
-just reset
-just help
-
-# Terminal UI help
-bun run .pi/multi-team/ui/terminal.mjs --help
+```
+ ○ CodepOS
+ ├─ Scanners
+ │  ├─ ○ scout   · Structure check
+ │  ├─ ○ sentinel · Security scan
+ │  └─ ○ indexer · Deep index
+ ├─ Council
+ │  ├─ ○ planning · Task planning
+ │  └─ ○ dokumenter · Documentation
+ └─ Teams
+    ├─ ○ main · Full pipeline
+    └─ ○ security · Security analysis
 ```
 
 ---
 
-## 6. Configuration Checklist
+## 4. Pi Extension UI (In Progress)
 
-```bash
-# Verify agent structure
-find .pi/multi-team/agents -type f -name "*.yaml" | wc -l
-# Expected: 6 teams with 12+ files each = 72+ files
+**Location:** `.pi/extensions/codepos-ui.ts`
 
-# Check justfile works
-just --list
+### Goal
 
-# Test setup command
-just setup --init
+Show CodepOS components directly in pi.dev's terminal UI, similar to pi-subagents widget.
 
-# Verify environment
-just teams list
+### Design
+
+```
+ ● CodepOS
+ ├─ Scanners
+ │  ├─ ○ scout   · Structure check
+ │  ├─ ○ sentinel · Security scan
+ │  └─ ○ indexer · Deep index
+ ├─ Council
+ │  ├─ ○ planning · Task planning
+ │  └─ ○ dokumenter · Documentation
+ └─ Teams
+    └─ ○ main · Full pipeline
+```
+
+### Implementation Plan
+
+- [ ] Fix `ctx.setWidget` API compatibility
+- [ ] Add component status updates when running
+- [ ] Integrate with scanner/agent/team commands
+- [ ] Show animated spinner for running components
+- [ ] Add click-to-expand functionality
+
+### Technical Requirements
+
+1. Uses `ExtensionContext.setWidget()` for pi TUI integration
+2. Reads component state from `.pi/state/<name>-activity.json`
+3. Renders using pi's theme system
+4. Updates on interval or when components change
+
+### Example State File
+
+```json
+// .pi/state/scout-activity.json
+{
+  "status": "running",
+  "startedAt": 1745623400000,
+  "toolUses": 5,
+  "tokens": 1200,
+  "activity": {
+    "tools": ["read", "bash"],
+    "text": "Scanning project structure..."
+  }
+}
 ```
 
 ---
 
-**Document Version:** 1.2  
-**Last Updated:** 2024-01-02  
-**Maintained By:** CodepOS Team  
-**Status:** Implementation Complete ✅  
-**Compliance:** pi.dev 100% Compliant ✅
+## 5. Component Activity Tracking
+
+To show running status in the UI, components write state to `.pi/state/`:
+
+### Activity Files
+
+| File | Purpose |
+|------|---------|
+| `<name>-activity.json` | Current status and activity |
+| `<name>-log.json` | Execution log |
+
+### Activity JSON Structure
+
+```json
+{
+  "status": "idle | running | completed | error",
+  "startedAt": 1745623400000,
+  "completedAt": 1745623450000,
+  "toolUses": 5,
+  "tokens": 1200,
+  "activity": {
+    "tools": ["read", "bash"],
+    "text": "Analyzing..."
+  },
+  "error": "Error message if status is error"
+}
+```
+
+### Status Icons
+
+| Icon | Meaning |
+|------|---------|
+| `●` | Has active components |
+| `○` | All idle |
+| `⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏` | Animated spinner (running) |
+| `✓` | Completed |
+| `✗` | Error |
+| `⎿` | Activity indicator |
 
 ---
 
+## 6. Quick Reference
+
+### Justfile Commands
+
+```bash
+# Standalone UI
+just ui status    # Status view
+just ui tree      # Tree view
+just ui watch     # Live monitoring
+
+# Orchestrator
+just orchestrate status    # Status + Council advice
+just orchestrate full      # Full pipeline
+
+# Scanners
+just scanner scout         # Structure check
+just scanner sentinel      # Security scan
+just scanner indexer       # Deep index
+
+# Teams
+just team main             # Full pipeline
+just team security         # Security pipeline
+```
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `.pi/multi-team/ui/terminal.mjs` | Standalone terminal UI |
+| `.pi/extensions/codepos-ui.ts` | Pi extension UI (in progress) |
+| `.pi/themes/*.json` | Theme definitions |
+| `.pi/state/<name>-activity.json` | Component status |
+
+---
+
+## 7. Theme System
+
+**Location:** `.pi/themes/`
+
+### Available Themes
+
+| Theme | Description |
+|-------|-------------|
+| `catppuccin-mocha` | Default - Dark purple accent |
+| `nord` | Nordic theme |
+| `dracula` | Dracula theme |
+| `monokai` | Monokai theme |
+| `gruvbox` | Gruvbox theme |
+| `tokyo-night` | Tokyo Night theme |
+| `ocean-breeze` | Ocean theme |
+| `synthwave` | Synthwave theme |
+| `cyberpunk` | Cyberpunk theme |
+| `everforest` | Everforest theme |
+| `dark-pro` | Dark Pro theme |
+| `rose-pine` | Rose Pine theme |
+
+### Theme Structure
+
+```json
+{
+  "name": "theme-name",
+  "vars": {
+    "bg": "#1e1e2e",
+    "fg": "#cdd6f4",
+    "accent": "#cba6f7",
+    "success": "#a6e3a1",
+    "error": "#f38ba8",
+    "comment": "#6c7086"
+  }
+}
+```
+
+---
+
+**Document Version:** 3.0  
+**Last Updated:** 2026-04-25  
+**Status:** Standalone UI Complete | Pi Extension In Progress

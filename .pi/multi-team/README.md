@@ -1,27 +1,45 @@
-# Multi-Team Architecture
+# CodepOS Multi-Team System
 
-The multi-team architecture enables organizing pi.dev agents into hierarchical teams for structured collaboration.
+CodepOS organizes agents into a hierarchy that works with pi.dev.
 
 ## Structure
 
 ```
 .pi/multi-team/
-├── agents/           # Individual agent configurations
-├── agents-os/        # Agent OS and runtime configurations
-├── expertise/        # Domain expertise definitions
-├── sessions/         # Active session coordination
-└── skills/           # Skill libraries
+├── scanners/      # Fast analysis tools (no LLM)
+├── council/       # LLM-powered advisors
+├── teams/         # Pipeline workflows
+├── agents/        # Legacy agent configs
+└── skills/        # pi.dev skill definitions
 ```
 
-## Team Organization
+## How It Works
 
-Teams are organized in a tree structure where:
-- A **parent team** (e.g., `/agents/backend`) supervises child teams
-- Children coordinate with their direct parent and optionally collaborate across siblings
-- Parent teams provide oversight and coordination without interfering with work
+1. **User** asks pi.dev (the Orchestrator)
+2. **Orchestrator** coordinates scanners/agents
+3. **Council** provides AI insights
+4. **Teams** execute pipelines
 
-## Agent Discovery
+## Commands
 
-- Each team can have up to 8 agents
-- New agents are added via API when team count < 8
-- Agent discovery uses `.cli/multi-team/<team-name>/__init__.py`
+```bash
+# Quick start
+just orchestrate status
+
+# Full pipeline
+just orchestrate full
+
+# Individual components
+just scanner scout       # Fast structure check
+just agent planning      # AI task planning
+just team main          # Full pipeline
+```
+
+## State
+
+All state is in `.pi/state/` for pi.dev compliance.
+
+## Learn More
+
+- [Full Documentation](docs/PROJECT_STATUS.md)
+- [pi.dev](https://pi.dev)

@@ -1,27 +1,47 @@
 # Multi-Team Architecture Documentation
 
-This directory contains documentation for the multi-team collaboration system in pi.dev.
+CodepOS organizes agents into scanners, council, and teams.
 
-## Getting Started
+## Quick Start
 
-1. **Understand Team Hierarchy**: Teams form a tree structure with parent-child relationships
-2. **Learn Collaboration Rules**: Agents can only collaborate within their team's subtree
-3. **Discover Team Members**: Use team inventory to find available agents
+```bash
+just orchestrate status   # See what's available
+just orchestrate full     # Run full pipeline
+```
 
 ## Directory Structure
 
 ```
-.pi/multi-team/docs/
-├── README.md                    # This file
-├── team-hierarchy.md            # Team tree structure
-├── collaboration.md             # Collaboration rules
-├── agent-discovery.md           # How agents discover teams
-└── api-reference.md             # Team API documentation
+.pi/multi-team/
+├── scanners/       # Fast, no-LLM analyzers
+│   ├── scout       # Structure check
+│   ├── sentinel   # Security scan
+│   ├── mapper     # Architecture view
+│   ├── librarian  # Docs index
+│   └── indexer    # Deep index (LLM)
+├── council/       # LLM-powered agents
+│   ├── planning   # Task planning
+│   ├── dokumenter # Documentation
+│   └── orchestrator
+└── teams/          # Pipelines
+    ├── main/      # Full analysis
+    └── security/  # Security scan
 ```
 
-## Quick Links
+## Commands
 
-- [Team Hierarchy](team-hierarchy.md) - How teams are organized
-- [Collaboration Rules](collaboration.md) - When agents can work together
-- [Agent Discovery](agent-discovery.md) - Finding team members
-- [API Reference](api-reference.md) - Working with team endpoints
+| Command | What it does |
+|---------|--------------|
+| `just orchestrate status` | Status + advice |
+| `just orchestrate full` | Full pipeline |
+| `just scanner scout` | Quick structure |
+| `just team main` | All-in-one pipeline |
+
+## State
+
+All state in `.pi/state/` for pi.dev compliance.
+
+## Learn More
+
+- [Project Status](../../docs/PROJECT_STATUS.md)
+- [README](../../README.md)
