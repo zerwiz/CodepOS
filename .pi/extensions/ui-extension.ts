@@ -1,17 +1,19 @@
 /**
  * CodepOS Interactive UI Extension
  *
- * Integrates CodepOS tools into the pi session.
- * Dynamically loads scanners, agents, and teams from manifests.
+ * Integrates CodepOS tools + enhanced agent status widget into the pi session.
  */
 
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { execSync } from "child_process";
-import { existsSync, readFileSync, mkdirSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, mkdirSync, writeFileSync, readdirSync } from "fs";
 import { join } from "path";
 
 const ACTIVE_AGENTS_FILE = ".pi/state/active-agents.json";
 const ROOT = process.cwd();
+
+const SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+let frameIndex = 0;
 
 interface ActiveAgent {
   id: string;
@@ -63,7 +65,7 @@ function loadManifests(dir: string): { name: string; description: string; status
   if (!existsSync(base)) return results;
   
   try {
-    const entries = require("fs").readdirSync(base);
+    const entries = readdirSync(base);
     for (const entry of entries) {
       const manifestPath = join(base, entry, "manifest.yaml");
       if (existsSync(manifestPath)) {
@@ -100,7 +102,7 @@ function getTeams() {
   if (!existsSync(base)) return results;
   
   try {
-    const entries = require("fs").readdirSync(base);
+    const entries = readdirSync(base);
     for (const entry of entries) {
       if (entry.endsWith(".yaml") || entry.endsWith(".yml")) {
         const name = entry.replace(/\.(yaml|yml)$/, "");
@@ -121,7 +123,95 @@ const AGENT_PROMPTS: Record<string, string> = {
   default: "Provide comprehensive analysis and improvements",
 };
 
+function renderWidget(ctx: ExtensionContext, theme: any, width: number): string[] {
+  const agents = getActiveAgents();
+  const active = agents.filter((a) => a.status === "running");
+
+  const lines: string[] = [];
+  if (active.length === 0) {
+    lines.push(theme.fg("dim", "○ CodepOS"));
+    return lines;
+  }
+
+  const spinnerChar = SPINNER[frameIndex % SPINNER.length];
+
+  lines.push(theme.fg("accent", "●") + " " + theme.fg("accent", "CodepOS"));
+
+  for (let i = 0; i < active.length; i++) {
+    const a = active[i];
+    const isLast = i === active.length - 1;
+    const connector = isLast ? " └─" : " ├─";
+
+    const duration = Math.round((Date.now() - a.startTime) / 1000);
+    
+    lines.push(
+      theme.fg("dim", connector) +
+        " " +
+        theme.fg("accent", spinnerChar) +
+        " " +
+        theme.bold(a.name) +
+        " " +
+        theme.fg("dim", "·") +
+        " " +
+        theme.fg("muted", `${a.type} (${duration}s)`)
+    );
+  }
+
+  return lines;
+}
+
 export default function (pi: ExtensionAPI): void {
+  let widgetInterval: ReturnType<typeof setInterval> | null = null;
+
+  pi.on("session_start", async (_event, ctx) => {
+    if (!ctx.hasUI) return;
+
+    ctx.ui.setWidget(
+      "codepos-agents",
+      (_tui, theme) => {
+        frameIndex++;
+        return {
+          render: (width: number) => renderWidget(ctx, theme, width),
+          invalidate: () => {},
+        };
+      },
+      { placement: "aboveEditor" },
+    );
+
+    ctx.ui.setWidget(
+      "codepos-footer",
+      (_tui, theme) => {
+        return {
+          render: (width: number) => [
+            theme.fg("accent", "CodepOS") + " " + theme.fg("dim", "·") + " " + theme.fg("muted", ctx.ui.theme.name)
+          ],
+          invalidate: () => {},
+        };
+      },
+      { placement: "footer" },
+    );
+
+    ctx.ui.notify("CodepOS Interactive UI Active", "info");
+  });
+
+  pi.on("session_replace", async () => {
+    if (widgetInterval) clearInterval(widgetInterval);
+    widgetInterval = null;
+  });
+
+  pi.registerShortcut("ctrl+x", {
+    description: "Next theme",
+    handler: async (ctx) => {
+      if (!ctx.hasUI) return;
+      const themes = ctx.ui.getAllThemes();
+      const current = ctx.ui.theme.name;
+      const idx = themes.findIndex((t) => t.name === current);
+      const next = themes[(idx + 1) % themes.length];
+      ctx.ui.setTheme(next.name);
+      ctx.ui.notify(`Theme: ${next.name}`, "info");
+    },
+  });
+
   pi.registerTool({
     name: "run_scanner",
     description: "Runs a scanner script (no LLM, fast analysis)",

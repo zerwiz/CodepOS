@@ -371,8 +371,20 @@ export default function (pi: ExtensionAPI): void {
     },
   });
 
-  pi.on("session_start", async () => {
+  pi.on("session_start", async (_event, ctx) => {
     currentThemeIndex = 2;
+    if (!ctx.hasUI) return;
+
+    ctx.ui.setWidget(
+      "codepos-theme",
+      (_tui, theme) => {
+        return {
+          render: (width: number) => [theme.fg("accent", "Theme: " + getCurrentTheme().name)],
+          invalidate: () => {},
+        };
+      },
+      { placement: "footer" },
+    );
   });
 
   pi.registerShortcut("ctrl+'", {
