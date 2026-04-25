@@ -1008,8 +1008,6 @@ curl -X POST http://localhost:3000/api/dashboards/import \
 
 ```json
 {
-  "name": "catppuccin-mocha",
-  "fg": "#cad3f5",
   "bg": "#1e1e2e",
   "accent": "#cba6f7",
   "success": "#a6e3a1",
