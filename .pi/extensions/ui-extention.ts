@@ -19,14 +19,23 @@ let frameIndex = 0;
 /**
  * Get all agent teams from the filesystem
  */
-const SINGLE_AGENTS = ['scout', 'sentinel', 'mapper', 'librarian', 'test-agent'];
+const SINGLE_AGENTS = [
+  "scout",
+  "sentinel",
+  "mapper",
+  "librarian",
+  "test-agent",
+];
 
 function getAgents(cwd: string) {
   const agentsDir = join(cwd, ".pi", "multi-team", "agents");
   try {
     if (!existsSync(agentsDir)) return [];
     return readdirSync(agentsDir, { withFileTypes: true })
-      .filter((dirent) => dirent.isDirectory() && !SINGLE_AGENTS.includes(dirent.name))
+      .filter(
+        (dirent) =>
+          dirent.isDirectory() && !SINGLE_AGENTS.includes(dirent.name),
+      )
       .map((dirent) => {
         const manifestPath = join(agentsDir, dirent.name, "manifest.yaml");
         let status = "inactive";
@@ -69,7 +78,12 @@ function renderWidget(
     return lines;
   }
 
-  lines.push(truncateToWidth(theme.fg("accent", "●") + " " + theme.fg("accent", "CodepOS"), width));
+  lines.push(
+    truncateToWidth(
+      theme.fg("accent", "●") + " " + theme.fg("accent", "CodepOS"),
+      width,
+    ),
+  );
 
   const spinnerChar = SPINNER[frameIndex % SPINNER.length];
 
@@ -80,11 +94,15 @@ function renderWidget(
 
     lines.push(
       truncateToWidth(
-        theme.fg("dim", connector) + " " +
-        theme.fg("accent", spinnerChar) + " " +
-        theme.bold(a.name) + " " +
-        theme.fg("dim", "·") + " " +
-        theme.fg("muted", a.description),
+        theme.fg("dim", connector) +
+          " " +
+          theme.fg("accent", spinnerChar) +
+          " " +
+          theme.bold(a.name) +
+          " " +
+          theme.fg("dim", "·") +
+          " " +
+          theme.fg("muted", a.description),
         width,
       ),
     );
