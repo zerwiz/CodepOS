@@ -1,0 +1,28 @@
+buffer:
+  enabled: true
+  max_messages: 10
+  cleanup_on_complete: true
+  render_once: true
+  render_delay_ms: 100
+  
+cleanup:
+  enabled: true
+  interval_minutes: 5
+  cleanup_inactive: true
+  
+response:
+  unique_id: true
+  prevent_duplication: true
+  
+state:
+  active_only: true
+  clear_inactive: true
+  
+metrics:
+  track_responses: true
+  track_executions: true
+  
+limits:
+  max_pending: 5
+  timeout_seconds: 30
+

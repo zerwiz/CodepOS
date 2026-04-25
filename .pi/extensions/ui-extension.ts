@@ -1,582 +1,137 @@
 /**
- * CodepOS Main UI Extension
- *
- * Provides UI widgets and theme management for the pi CLI terminal interface.
- * Integrates with CodepOS agent teams for real-time status monitoring.
- *
- * Usage:
- *   pi -e extensions/ui-extension.ts
- *
- * Features:
- *   - Real-time agent status widget
- *   - Theme cycling with keyboard shortcuts
- *   - Progress indicators
- *   - Notification system
- *
- * @version 1.0.0
- * @author CodepOS Team
- * @license MIT
+ * CodepOS Interactive UI Extension
+ * 
+ * Integrates the enhanced agent status widget into the pi session.
  */
 
-import type {
-  ExtensionAPI,
-  ExtensionContext,
-} from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { truncateToWidth } from "@mariozechner/pi-tui";
+import { readFileSync, existsSync, readdirSync } from 'fs';
+import { join } from 'path';
 
-// ── Available themes ─────────────────────────────────────────────────────────
-
-const THEMES = [
-  {
-    name: "catppuccin-mocha",
-    fg: "#f5e0dc",
-    bg: "#1e1e2e",
-    accent: "#cba6f7",
-    success: "#a6e3a1",
-    warning: "#f9e2af",
-    error: "#f38ba8",
-    info: "#89b4fa",
-    dim: "#6c7086",
-    muted: "#717d8a",
-    border: "#313244",
-    borderMuted: "#45475a",
-    separator: "#313244",
-    highlight: "#cba6f7",
-    activeBorder: "#cba6f7",
-    statusBar: "#313244",
-  },
-  {
-    name: "cyberpunk",
-    fg: "#f0f0f0",
-    bg: "#0d1117",
-    accent: "#d0d6f9",
-    success: "#00e676",
-    warning: "#ffeb3b",
-    error: "#ff1744",
-    info: "#2979ff",
-    dim: "#8b949e",
-    muted: "#6e7681",
-    border: "#30363d",
-    borderMuted: "#21262d",
-    separator: "#30363d",
-    highlight: "#79c0ff",
-    activeBorder: "#d0d6f9",
-    statusBar: "#161b22",
-  },
-  {
-    name: "dracula",
-    fg: "#f8f8f2",
-    bg: "#282a36",
-    accent: "#bd93f9",
-    success: "#50fa7b",
-    warning: "#f1fa8c",
-    error: "#ff5555",
-    info: "#8be9fd",
-    dim: "#6272a4",
-    muted: "#6272a4",
-    border: "#44475a",
-    borderMuted: "#3b4055",
-    separator: "#44475a",
-    highlight: "#50fa7b",
-    activeBorder: "#bd93f9",
-    statusBar: "#44475a",
-  },
-  {
-    name: "everforest",
-    fg: "#d3c6aa",
-    bg: "#2d2520",
-    accent: "#73dce8",
-    success: "#4b8b3d",
-    warning: "#e6ac30",
-    error: "#902e41",
-    info: "#55b5c5",
-    dim: "#607d8b",
-    muted: "#6c84a4",
-    border: "#3b3630",
-    borderMuted: "#3e3631",
-    separator: "#3b3630",
-    highlight: "#73dce8",
-    activeBorder: "#73dce8",
-    statusBar: "#3b3630",
-  },
-  {
-    name: "gruvbox",
-    fg: "#ebdbb2",
-    bg: "#282828",
-    accent: "#fb4934",
-    success: "#b8bb26",
-    warning: "#fe8019",
-    error: "#fb4934",
-    info: "#83a598",
-    dim: "#928374",
-    muted: "#928374",
-    border: "#3c3836",
-    borderMuted: "#4c443b",
-    separator: "#3c3836",
-    highlight: "#fb4934",
-    activeBorder: "#fb4934",
-    statusBar: "#3c3836",
-  },
-  {
-    name: "midnight-ocean",
-    fg: "#e0e0e0",
-    bg: "#1a1a2e",
-    accent: "#4fc3f7",
-    success: "#00e676",
-    warning: "#ffeb3b",
-    error: "#ff5252",
-    info: "#2196f3",
-    dim: "#757575",
-    muted: "#616161",
-    border: "#333333",
-    borderMuted: "#2c2c2c",
-    separator: "#333333",
-    highlight: "#4fc3f7",
-    activeBorder: "#4fc3f7",
-    statusBar: "#1a1a2e",
-  },
-  {
-    name: "nord",
-    fg: "#e0e0e0",
-    bg: "#2e3440",
-    accent: "#88c0d0",
-    success: "#a3be8c",
-    warning: "#ebcb8b",
-    error: "#bf616a",
-    info: "#81a1c1",
-    dim: "#4c566a",
-    muted: "#586069",
-    border: "#3b4252",
-    borderMuted: "#2e3440",
-    separator: "#3b4252",
-    highlight: "#81a1c1",
-    activeBorder: "#88c0d0",
-    statusBar: "#3b4252",
-  },
-  {
-    name: "ocean-breeze",
-    fg: "#e0f4e8",
-    bg: "#0f1e2c",
-    accent: "#4fc3f7",
-    success: "#00e676",
-    warning: "#ffeb3b",
-    error: "#f44336",
-    info: "#2196f3",
-    dim: "#78909c",
-    muted: "#546e7a",
-    border: "#263238",
-    borderMuted: "#1e272c",
-    separator: "#263238",
-    highlight: "#4fc3f7",
-    activeBorder: "#4fc3f7",
-    statusBar: "#263238",
-  },
-  {
-    name: "rose-pine",
-    fg: "#e0def4",
-    bg: "#191724",
-    accent: "#eb6f92",
-    success: "#33ff57",
-    warning: "#f9e04a",
-    error: "#ff3f6e",
-    info: "#74c4ec",
-    dim: "#6e6a86",
-    muted: "#6e6a86",
-    border: "#44475a",
-    borderMuted: "#3b4055",
-    separator: "#44475a",
-    highlight: "#eb6f92",
-    activeBorder: "#eb6f92",
-    statusBar: "#44475a",
-  },
-  {
-    name: "synthwave",
-    fg: "#cccccc",
-    bg: "#1a0f2e",
-    accent: "#ff00ff",
-    success: "#00ff00",
-    warning: "#ffff00",
-    error: "#ff0000",
-    info: "#00ffff",
-    dim: "#6b6b6b",
-    muted: "#808080",
-    border: "#404040",
-    borderMuted: "#303030",
-    separator: "#404040",
-    highlight: "#ff00ff",
-    activeBorder: "#ff00ff",
-    statusBar: "#404040",
-  },
-  {
-    name: "tokyo-night",
-    fg: "#a9b1d6",
-    bg: "#1a1b26",
-    accent: "#7aa2f7",
-    success: "#9ece6a",
-    warning: "#e0af68",
-    error: "#f7768e",
-    info: "#7dcfff",
-    dim: "#565f89",
-    muted: "#49576e",
-    border: "#24283b",
-    borderMuted: "#1f2335",
-    separator: "#24283b",
-    highlight: "#7aa2f7",
-    activeBorder: "#7aa2f7",
-    statusBar: "#1a1b26",
-  },
-  {
-    name: "dark-pro",
-    fg: "#ffffff",
-    bg: "#0d1117",
-    accent: "#58a6ff",
-    success: "#3fb950",
-    warning: "#d29922",
-    error: "#f85149",
-    info: "#007fd4",
-    dim: "#8b949e",
-    muted: "#6e7681",
-    border: "#30363d",
-    borderMuted: "#21262d",
-    separator: "#30363d",
-    highlight: "#58a6ff",
-    activeBorder: "#58a6ff",
-    statusBar: "#161b22",
-  },
-  {
-    name: "monokai",
-    fg: "#f8f8f2",
-    bg: "#272822",
-    accent: "#a6e22e",
-    success: "#a8ff78",
-    warning: "#e6db74",
-    error: "#f92672",
-    info: "#66d9ef",
-    dim: "#75715e",
-    muted: "#8b949e",
-    border: "#3e3d32",
-    borderMuted: "#2d2d24",
-    separator: "#49483e",
-    highlight: "#a6e22e",
-    activeBorder: "#a6e22e",
-    statusBar: "#3e3d32",
-  },
-];
-
-// ── State ──────────────────────────────────────────────────────────────────────
-
-let currentThemeIndex = 0;
-let swatchTimer: ReturnType<typeof setTimeout> | null = null;
-
-// ── Theme functions ────────────────────────────────────────────────────────────
+// Braille spinner frames
+const SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+let frameIndex = 0;
 
 /**
- * Get list of all available themes
+ * Get all agent teams from the filesystem
  */
-function getThemeList(ctx: ExtensionContext): ThemeDefinition[] {
-  return ctx.ui.getAllThemes().map(t => ({
-    name: t.name,
-    fg: "#ffffff",
-    bg: "#000000",
-    accent: "#bd93f9",
-    success: "#50fa7b",
-    warning: "#f1fa8c",
-    error: "#ff5555",
-    info: "#8be9fd",
-    dim: "#6272a4",
-    muted: "#6272a4",
-    border: "#44475a",
-  }));
+function getAgents(cwd: string) {
+  const agentsDir = join(cwd, '.pi', 'multi-team', 'agents');
+  try {
+    if (!existsSync(agentsDir)) return [];
+    return readdirSync(agentsDir, { withFileTypes: true })
+      .filter(dirent => dirent.isDirectory())
+      .map(dirent => {
+        const manifestPath = join(agentsDir, dirent.name, 'manifest.yaml');
+        let status = 'inactive';
+        let description = 'System agent';
+
+        if (existsSync(manifestPath)) {
+          const content = readFileSync(manifestPath, 'utf-8');
+          const statusMatch = content.match(/status:\s*(\S+)/);
+          const descMatch = content.match(/description:\s*['"]?([^'"]+)['"]?/);
+          
+          if (statusMatch) status = statusMatch[1].toLowerCase();
+          if (descMatch) description = descMatch[1];
+        }
+
+        return {
+          name: dirent.name,
+          status,
+          description
+        };
+      });
+  } catch (error) {
+    return [];
+  }
 }
 
 /**
- * Find current theme index by name
+ * Render the agent status widget
  */
-function findCurrentIndex(themeName: string): number {
-  const themes = getThemeList(ctx);
-  const current = themes.findIndex((t) => t.name === themeName);
-  return current >= 0 ? current : 0;
+function renderWidget(ctx: ExtensionContext, theme: any, width: number): string[] {
+  const agents = getAgents(ctx.cwd);
+  const running = agents.filter(a => a.status === 'active');
+  const finished = agents.filter(a => a.status === 'completed' || a.status === 'inactive');
+  
+  const lines: string[] = [];
+  const headingColor = running.length > 0 ? "accent" : "dim";
+  const headingIcon = running.length > 0 ? "●" : "○";
+  
+  lines.push(truncateToWidth(theme.fg(headingColor, headingIcon) + " " + theme.fg(headingColor, "CodepOS Agents"), width));
+  
+  const spinnerChar = SPINNER[frameIndex % SPINNER.length];
+  
+  // Render Running Agents
+  for (let i = 0; i < running.length; i++) {
+    const a = running[i];
+    const isLast = (i === running.length - 1) && (finished.length === 0);
+    const connector = isLast ? ' └─' : ' ├─';
+    const subConnector = isLast ? '    ' : ' │  ';
+    
+    lines.push(truncateToWidth(theme.fg("dim", connector) + " " + theme.fg("accent", spinnerChar) + " " + theme.bold(a.name) + " " + theme.fg("dim", "·") + " " + theme.fg("muted", a.description), width));
+    lines.push(truncateToWidth(theme.fg("dim", subConnector) + " " + theme.fg("dim", '  ⎿  thinking…'), width));
+  }
+  
+  // Render Finished/Inactive Agents
+  // Limit to 5 finished agents to save space
+  const displayFinished = finished.slice(0, 5);
+  for (let i = 0; i < displayFinished.length; i++) {
+    const a = displayFinished[i];
+    const isLast = i === displayFinished.length - 1;
+    const connector = isLast ? ' └─' : ' ├─';
+    
+    const icon = a.status === 'completed' ? theme.fg("success", "✓") : theme.fg("dim", "○");
+    const nameColor = a.status === 'completed' ? "muted" : "dim";
+    
+    lines.push(truncateToWidth(theme.fg("dim", connector) + " " + icon + " " + theme.fg(nameColor, a.name) + " " + theme.fg("dim", "·") + " " + theme.fg("dim", a.description), width));
+  }
+  
+  if (finished.length > 5) {
+    lines.push(theme.fg("dim", `    + ${finished.length - 5} more...`));
+  }
+
+  return lines;
 }
-
-// ── Widget renderers ───────────────────────────────────────────────────────────
-
-/**
- * Render agent status widget
- */
-function renderAgentStatus(ctx: ExtensionContext): {
-  invalidate(): void;
-  render(width: number): string[];
-} {
-  const agents = [
-    "setup",
-    "ui-gen-A",
-    "validation-A",
-    "validation-B",
-    "validation-C",
-    "planning",
-    "design",
-    "frontend",
-    "testing",
-    "database",
-    "api-backend",
-    "integration",
-    "orchestrator",
-    "council",
-  ];
-
-  return {
-    invalidate: () => {},
-    render: (width: number) => {
-      const lines: string[] = [];
-      const status = ctx.ui.theme;
-
-      lines.push("");
-      lines.push("═".repeat(width));
-      lines.push("🤖 Agent Status");
-      lines.push("═".repeat(width));
-
-      for (const agent of agents) {
-        const path = `.pi/multi-team/agents/${agent}`;
-        const exists = ctx.fs.existsSync(path);
-        const statusIcon = exists ? "🟢" : "⚪";
-        lines.push(`${statusIcon} ${agent}`);
-      }
-
-      lines.push("");
-      lines.push(`Active: ${activeCount}/${agents.length}`);
-
-      return lines;
-    },
-  };
-}
-
-/**
- * Render progress indicator
- */
-function renderProgress(progress: number): {
-  invalidate(): void;
-  render(width: number): string[];
-} {
-  return {
-    invalidate: () => {},
-    render: (_width: number) => {
-      const lines: string[] = [];
-      lines.push("");
-      lines.push(`📊 Progress: ${progress}%`);
-      lines.push("");
-      lines.push("┌─┬─────────────────────────────────┐");
-      lines.push(
-        `│ ${"█".repeat(Math.floor(progress / 5))}${"░".repeat(20 - Math.floor(progress / 5))}│`,
-      );
-      lines.push(`├───────────────────────────────────┤`);
-      lines.push("│  Working...                       │");
-      lines.push("└───────────────────────────────────┘");
-      lines.push("");
-
-      return lines;
-    },
-  };
-}
-
-// ── Extension factory ──────────────────────────────────────────────────────────
 
 export default function (pi: ExtensionAPI): void {
-  // ── Theme cycling functionality ───────────────────────────────────────────────
-
-  function updateStatus(ctx: ExtensionContext): void {
-    if (!ctx.hasUI) return;
-    const name = ctx.ui.theme.name;
-    ctx.ui.setStatus("theme", `🎨 ${name}`);
-  }
-
-  function showSwatch(ctx: ExtensionContext): void {
-    if (!ctx.hasUI) return;
-
-    if (swatchTimer) {
-      clearTimeout(swatchTimer);
-      swatchTimer = null;
-    }
-
-    ctx.ui.setWidget(
-      "theme-swatch",
-      (_tui, theme) => ({
-        invalidate: () => {},
-        render: (width: number) => {
-          const block = "███";
-          const swatch =
-            theme.fg("success", block) +
-            " " +
-            theme.fg("accent", block) +
-            " " +
-            theme.fg("warning", block) +
-            " " +
-            theme.fg("dim", block) +
-            " " +
-            theme.fg("muted", block);
-          const label =
-            theme.fg("accent", " 🎨 ") +
-            theme.fg("muted", ctx.ui.theme.name) +
-            "  " +
-            swatch;
-          const border = theme.fg(
-            "borderMuted",
-            "─".repeat(Math.max(0, width)),
-          );
-          return [border, truncateToWidth("  " + label, width), border];
-        },
-      }),
-      { placement: "belowEditor" },
-    );
-
-    swatchTimer = setTimeout(() => {
-      ctx.ui.setWidget("theme-swatch", undefined);
-      swatchTimer = null;
-    }, 3000);
-  }
-
-  function cycleTheme(ctx: ExtensionContext, direction: 1 | -1): void {
-    if (!ctx.hasUI) return;
-
-    const themes = getThemeList(ctx);
-    if (themes.length === 0) {
-      ctx.ui.notify("No themes available", "warning");
-      return;
-    }
-
-    let index = findCurrentIndex(ctx.ui.theme.name);
-    if (index === -1) index = 0;
-
-    index = (index + direction + themes.length) % themes.length;
-    const theme = themes[index];
-
-    const result = ctx.ui.setTheme(theme.name);
-
-    if (result.success) {
-      updateStatus(ctx);
-      showSwatch(ctx);
-      ctx.ui.notify(`${theme.name} (${index + 1}/${themes.length})`, "info");
-    } else {
-      ctx.ui.notify(`Failed to set theme: ${result.error}`, "error");
-    }
-  }
-
-  // Remove keyboard shortcuts - use alt key combinations in key_press instead
-
-  // ── Command: /theme ──────────────────────────────────────────────────────────
-
-  pi.registerCommand("theme", {
-    description: "Select a theme: /theme or /theme <name>",
-    handler: async (args, ctx) => {
-      if (!ctx.hasUI) return;
-
-      const themes = getThemeList(ctx);
-      const arg = args.trim();
-
-      if (arg) {
-        const result = ctx.ui.setTheme(arg);
-        if (result.success) {
-          updateStatus(ctx);
-          showSwatch(ctx);
-          ctx.ui.notify(`Theme: ${arg}`, "info");
-        } else {
-          ctx.ui.notify(`Theme not found: ${arg}`, "error");
-        }
-        return;
-      }
-
-      const items = themes.map((t) => {
-        const desc = t.path ? t.path : "built-in";
-        const active = t.name === ctx.ui.theme.name ? " (active)" : "";
-        return `${t.name}${active} — ${desc}`;
-      });
-
-      const selected = await ctx.ui.select("Select Theme", items);
-      if (!selected) return;
-
-      const selectedName = selected.split(/\s/)[0];
-      const result = ctx.ui.setTheme(selectedName);
-      if (result.success) {
-        updateStatus(ctx);
-        showSwatch(ctx);
-        ctx.ui.notify(`Theme: ${selectedName}`, "info");
-      }
-    },
-  });
-
-  // ── Session lifecycle ─────────────────────────────────────────────────────────
+  let widgetInterval: ReturnType<typeof setInterval> | null = null;
 
   pi.on("session_start", async (_event, ctx) => {
     if (!ctx.hasUI) return;
 
-    // Apply default theme (dracula - index 2)
-    const defaultTheme = THEMES[2];
-    const result = ctx.ui.setTheme(defaultTheme.name);
+    // Set widget
+    ctx.ui.setWidget("codepos-agents", (tui, theme) => {
+      return {
+        render: (width) => renderWidget(ctx, theme, width),
+        invalidate: () => {}
+      };
+    }, { placement: "aboveEditor" });
 
-    if (result.success) {
-      currentThemeIndex = 2;
-      updateStatus(ctx);
-      showSwatch(ctx);
+    // Update interval for spinner
+    widgetInterval = setInterval(() => {
+      frameIndex++;
+      if (ctx.hasUI) (ctx as any).ui._tui?.requestRender();
+    }, 100);
 
-      // Show welcome notification
-      ctx.ui.notify("CodepOS Terminal UI ready!", "info");
-    }
+    ctx.ui.notify("CodepOS Interactive UI Active", "info");
   });
 
   pi.on("session_shutdown", async () => {
-    if (swatchTimer) {
-      clearTimeout(swatchTimer);
-      swatchTimer = null;
-    }
+    if (widgetInterval) clearInterval(widgetInterval);
   });
 
-  // ── Key press handlers ────────────────────────────────────────────────────────
-
-  pi.on("key_press", async (event, ctx) => {
-    if (!ctx.hasUI) return;
-
-    const key = event.key;
-
-    // Ctrl + Left: Previous theme
-    if (key === "ArrowLeft" && event.ctrlKey) {
-      if (event.ctrlKey) {
-        cycleTheme(ctx, -1);
-      }
-    }
-
-    // Keyboard shortcuts
+  // Re-register theme cycle commands
   pi.registerShortcut("ctrl+b", {
-    description: "Cycle theme forward",
+    description: "Next theme",
     handler: async (ctx) => {
       if (!ctx.hasUI) return;
-      cycleTheme(ctx, 1);
-    },
-  });
-
-  pi.registerShortcut("ctrl+q", {
-    description: "Cycle theme backward",
-    handler: async (ctx) => {
-      if (!ctx.hasUI) return;
-      cycleTheme(ctx, -1);
-    },
-  });
-
-    // Ctrl + Right: Next theme
-    if (key === "ArrowRight" && event.ctrlKey) {
-      if (event.ctrlKey) {
-        cycleTheme(ctx, 1);
-      }
-    }
-
-    // Ctrl + Space: Random theme
-    if (key === " " && event.ctrlKey) {
-      const randomIndex = Math.floor(Math.random() * THEMES.length);
-      const theme = THEMES[randomIndex];
-      const result = ctx.ui.setTheme(theme.name);
-      if (result.success) {
-        updateStatus(ctx);
-        showSwatch(ctx);
-        ctx.ui.notify(`Random theme: ${theme.name}`, "info");
-      }
+      const themes = ctx.ui.getAllThemes();
+      const current = ctx.ui.theme.name;
+      const idx = themes.findIndex(t => t.name === current);
+      const next = themes[(idx + 1) % themes.length];
+      ctx.ui.setTheme(next.name);
     }
   });
 }

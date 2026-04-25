@@ -1,6 +1,26 @@
 # CodepOS Multi-Agent System
 
 # =========================
+# GENERIC TEAM RUNNER
+# =========================
+
+team name *args:
+    @echo "🚀 Deploying team: {{name}}..."
+    @if [ -f ".pi/multi-team/agents/{{name}}" ]; then \
+        bun run .pi/multi-team/agents/{{name}} {{args}}; \
+    elif [ -d ".pi/multi-team/agents/{{name}}" ]; then \
+        if [ -f ".pi/multi-team/agents/{{name}}/index.mjs" ]; then \
+            bun run .pi/multi-team/agents/{{name}}/index.mjs {{args}}; \
+        else \
+            echo "⚠️ No index.mjs found for team {{name}}, running generic setup..."; \
+            just {{name}} {{args}} || echo "No recipe found for {{name}}"; \
+        fi \
+    else \
+        echo "❌ Team {{name}} not found in .pi/multi-team/agents/"; \
+        exit 1; \
+    fi
+
+# =========================
 # ORCHESTRATION
 # =========================
 
@@ -98,6 +118,16 @@ security-scan:
     @echo "  - Aegis: .codepos/aegis/"
     @echo "  - Tests: harness/*"
     @echo "  - Status: Ready"
+
+# =========================
+# PI TERMINAL UI
+# =========================
+
+pi-status:
+    bun run .pi/multi-team/ui/terminal.mjs
+
+pi-watch:
+    bun run .pi/multi-team/ui/terminal.mjs watch
 
 # =========================
 # ADDITIONAL RECIPECES
