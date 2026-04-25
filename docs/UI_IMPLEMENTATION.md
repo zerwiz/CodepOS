@@ -72,59 +72,57 @@ just ui watch
 
 ---
 
-## 4. Pi Extension UI (In Progress)
+## 4. Pi Extension Tools
 
-**Location:** `.pi/extensions/codepos-ui.ts`
+**Location:** `.pi/extensions/ui-extension.ts`
 
-### Goal
+Shows CodepOS components via tools in pi's terminal.
 
-Show CodepOS components directly in pi.dev's terminal UI, similar to pi-subagents widget.
+### Tools
 
-### Design
+| Tool | Description |
+|------|------------|
+| `codepos_status` | Show status tree (view=tree/status/activity) |
+| `run_scanner` | Run a scanner |
+| `run_agent` | Run an LLM agent |
+| `run_team` | Run a team |
+| `list_codepos` | List all components |
+
+### Usage
 
 ```
- ● CodepOS
+pi codepos_status           # Status view
+pi codepos_status tree   # Tree view
+pi codepos_status activity  # Activity view
+
+pi run_scanner name=scout
+pi run_agent name=security
+pi run_team name=main
+```
+
+### Tree View Output
+
+```
+ ○ CodepOS
  ├─ Scanners
  │  ├─ ○ scout   · Structure check
  │  ├─ ○ sentinel · Security scan
- │  └─ ○ indexer · Deep index
- ├─ Council
- │  ├─ ○ planning · Task planning
- │  └─ ○ dokumenter · Documentation
+ │  ├─ ○ librarian · Documentation
+ │  └─ ○ mapper · Architecture
+ ├─ Agents
+ │  ├─ ○ scout-ai · Codebase analysis
+ │  ├─ ○ security · Security analysis
+ │  └─ ○ planner · Task planning
  └─ Teams
     └─ ○ main · Full pipeline
 ```
 
-### Implementation Plan
+### Implementation Status
 
-- [ ] Fix `ctx.setWidget` API compatibility
-- [ ] Add component status updates when running
-- [ ] Integrate with scanner/agent/team commands
-- [ ] Show animated spinner for running components
-- [ ] Add click-to-expand functionality
-
-### Technical Requirements
-
-1. Uses `ExtensionContext.setWidget()` for pi TUI integration
-2. Reads component state from `.pi/state/<name>-activity.json`
-3. Renders using pi's theme system
-4. Updates on interval or when components change
-
-### Example State File
-
-```json
-// .pi/state/scout-activity.json
-{
-  "status": "running",
-  "startedAt": 1745623400000,
-  "toolUses": 5,
-  "tokens": 1200,
-  "activity": {
-    "tools": ["read", "bash"],
-    "text": "Scanning project structure..."
-  }
-}
-```
+- [x] Status tools (run_scanner, run_agent, run_team)
+- [x] Dynamic loading from manifests
+- [x] Tree view via tool output
+- [ ] Widget integration (setWidget API - complex)
 
 ---
 
@@ -198,7 +196,8 @@ just team security         # Security pipeline
 | File | Purpose |
 |------|---------|
 | `.pi/multi-team/ui/terminal.mjs` | Standalone terminal UI |
-| `.pi/extensions/codepos-ui.ts` | Pi extension UI (in progress) |
+| `.pi/extensions/ui-extension.ts` | Pi extension tools (scanners, teams, agents) |
+| `.pi/extensions/theme-cycler.ts` | Theme switching via pi |
 | `.pi/themes/*.json` | Theme definitions |
 | `.pi/state/<name>-activity.json` | Component status |
 

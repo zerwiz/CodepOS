@@ -11,9 +11,9 @@ export default function (pi: ExtensionAPI) {
         const teams = execSync("ls -1 .pi/multi-team/agents 2>/dev/null || echo 'No teams found'", {
           encoding: "utf-8",
         });
-        return { message: `Available Teams:\n${teams}\nUse 'run_team teamName=<name>' to deploy` };
+        return { content: [{ type: "text", text: `Available Teams:\n${teams}\nUse 'run_team teamName=<name>' to deploy` }] };
       } catch {
-        return { message: "No teams found" };
+        return { content: [{ type: "text", text: "No teams found" }] };
       }
     },
   });
@@ -32,14 +32,14 @@ export default function (pi: ExtensionAPI) {
     execute: async (args) => {
       const teamName = args?.teamName;
       if (!teamName) {
-        return { message: "teamName required. Usage: deploy_codepos_team teamName=<team>" };
+        return { content: [{ type: "text", text: "teamName required. Usage: deploy_codepos_team teamName=<team>" }] };
       }
       try {
         const cmd = `just team ${teamName}${args?.args ? " " + args.args : ""}`;
         const output = execSync(cmd, { encoding: "utf-8" });
-        return { message: `Team ${teamName} deployed:\n${output}` };
+        return { content: [{ type: "text", text: `Team ${teamName} deployed:\n${output}` }] };
       } catch (error: any) {
-        return { message: `Error: ${error.message}` };
+        return { content: [{ type: "text", text: `Error: ${error.message}` }] };
       }
     },
   });
@@ -51,9 +51,9 @@ export default function (pi: ExtensionAPI) {
     execute: async () => {
       try {
         const output = execSync("just scanner scout", { encoding: "utf-8" });
-        return { message: `Scout Report:\n${output}` };
+        return { content: [{ type: "text", text: `Scout Report:\n${output}` }] };
       } catch (error: any) {
-        return { message: `Error: ${error.message}` };
+        return { content: [{ type: "text", text: `Error: ${error.message}` }] };
       }
     },
   });
@@ -65,9 +65,9 @@ export default function (pi: ExtensionAPI) {
     execute: async () => {
       try {
         const output = execSync("just scanner sentinel", { encoding: "utf-8" });
-        return { message: `Sentinel Report:\n${output}` };
+        return { content: [{ type: "text", text: `Sentinel Report:\n${output}` }] };
       } catch (error: any) {
-        return { message: `Error: ${error.message}` };
+        return { content: [{ type: "text", text: `Error: ${error.message}` }] };
       }
     },
   });
@@ -79,9 +79,9 @@ export default function (pi: ExtensionAPI) {
     execute: async () => {
       try {
         const output = execSync("just scanner mapper", { encoding: "utf-8" });
-        return { message: `Project Structure:\n${output}` };
+        return { content: [{ type: "text", text: `Project Structure:\n${output}` }] };
       } catch (error: any) {
-        return { message: `Error: ${error.message}` };
+        return { content: [{ type: "text", text: `Error: ${error.message}` }] };
       }
     },
   });
@@ -93,9 +93,9 @@ export default function (pi: ExtensionAPI) {
     execute: async () => {
       try {
         const output = execSync("just scanner librarian", { encoding: "utf-8" });
-        return { message: `Documentation Index:\n${output}` };
+        return { content: [{ type: "text", text: `Documentation Index:\n${output}` }] };
       } catch (error: any) {
-        return { message: `Error: ${error.message}` };
+        return { content: [{ type: "text", text: `Error: ${error.message}` }] };
       }
     },
   });

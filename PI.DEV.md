@@ -290,6 +290,17 @@ export default function (pi: ExtensionAPI) {
   pi.on("tool_call", async (event, ctx) => { ... });
 }
 
+### Tool Result Format (CRITICAL)
+Tools must return `{ content: [{ type: "text", text: "..." }] }`. Using `{ message: "..." }` causes `TypeError: Cannot read properties of undefined (reading 'filter')`.
+
+```typescript
+// ✅ CORRECT
+execute: async (args) => ({ content: [{ type: "text", text: "result" }] })
+
+// ❌ WRONG
+execute: async (args) => ({ message: "result" })
+```
+
 The default export can also be async. pi waits for async extension factories before startup continues, which is useful for one-time initialization such as fetching remote model lists before calling pi.registerProvider().
 
 What's possible:

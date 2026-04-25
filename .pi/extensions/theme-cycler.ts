@@ -288,10 +288,10 @@ export default function (pi: ExtensionAPI): void {
       if (args.themeName && args.themeName.length > 0) {
         const found = THEMES.find((t) => t.name === args.themeName);
         if (!found) {
-          return { message: `Theme not found: ${args.themeName}` };
+          return { content: [{ type: "text", text: `Theme not found: ${args.themeName}` }] };
         }
         currentThemeIndex = THEMES.findIndex((t) => t.name === args.themeName);
-        return { message: `Applied theme: ${found.name}` };
+        return { content: [{ type: "text", text: `Applied theme: ${found.name}` }] };
       }
 
       const direction = args.direction || "next";
@@ -304,7 +304,7 @@ export default function (pi: ExtensionAPI): void {
       }
 
       const theme = getCurrentTheme();
-      return { message: `Switched to theme: ${theme.name}` };
+      return { content: [{ type: "text", text: `Switched to theme: ${theme.name}` }] };
     },
   });
 
@@ -332,7 +332,7 @@ export default function (pi: ExtensionAPI): void {
       }
 
       status += `\n\nAvailable themes: ${THEMES.length}`;
-      return { message: status };
+      return { content: [{ type: "text", text: status }] };
     },
   });
 
@@ -367,7 +367,7 @@ export default function (pi: ExtensionAPI): void {
         list += `\nUse codepos_cycle_theme to switch.`;
       }
 
-      return { message: list };
+      return { content: [{ type: "text", text: list }] };
     },
   });
 
@@ -379,6 +379,8 @@ export default function (pi: ExtensionAPI): void {
     description: "Next theme",
     handler: async () => {
       currentThemeIndex = (currentThemeIndex + 1) % THEMES.length;
+      const theme = getCurrentTheme();
+      pi.notify(`Theme: ${theme.name}`, "info");
     },
   });
 
@@ -386,6 +388,8 @@ export default function (pi: ExtensionAPI): void {
     description: "Previous theme",
     handler: async () => {
       currentThemeIndex = (currentThemeIndex - 1 + THEMES.length) % THEMES.length;
+      const theme = getCurrentTheme();
+      pi.notify(`Theme: ${theme.name}`, "info");
     },
   });
 }

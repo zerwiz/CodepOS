@@ -37,14 +37,14 @@ You (Orchestrator)
 
 ## Available Tools (use run_* tools or bash)
 
-### Scanners (fast)
+### Scanners (fast - no LLM)
 - `run_scanner name=scout` - Quick structure check
 - `run_scanner name=sentinel` - Security scan
 - `run_scanner name=mapper` - Architecture view
-- `run_scanner name=librarian` - Docs index
-- `run_scanner name=indexer` - Deep index with LLM
+- `run_scanner name=librarian` - List documentation files ONLY
 
-### Agents (LLM-powered)
+### Agents (LLM-powered - USE THESE for deep analysis)
+- `run_scanner name=indexer` - DEEP index with LLM analysis (uses pi for brain)
 - `run_agent name=planning` - Create task plans
 - `run_agent name=dokumenter` - Generate documentation
 
@@ -56,19 +56,29 @@ You (Orchestrator)
 - `list_codepos` - Show all available components
 - `list_active_agents` - Show running agents
 
+## Decision Matrix
+
+| Need | Tool | Why |
+|------|------|-----|
+| Quick file list | `run_scanner name=librarian` | Fast, no LLM |
+| Deep code analysis + brain | `run_scanner name=indexer` | Spawns pi with LLM |
+| Security check | `run_scanner name=sentinel` | Pattern matching |
+| Structure overview | `run_scanner name=mapper` | Tree view |
+| Task planning | `run_agent name=planning` | LLM reasoning |
+| Generate docs | `run_agent name=dokumenter` | LLM writing |
+
+## Common Mistakes
+
+❌ `run_librarian` - Lists files only, NO LLM analysis
+✅ `run_scanner name=indexer` - Uses pi/AI to analyze structure
+
 ## Quick Examples
 
-**User:** "What's in this project?"
-→ Run: `run_scanner name=scout`
+**User:** "Index the codebase with AI analysis"
+→ Run: `run_scanner name=indexer` (NOT librarian)
 
-**User:** "Check for security issues"
-→ Run: `run_team name=security`
-
-**User:** "Create a task plan"
-→ Run: `run_agent name=planning`
-
-**User:** "Analyze everything"
-→ Run: `run_team name=main`
+**User:** "List all docs"
+→ Run: `run_scanner name=librarian`
 
 ## You have memory
 

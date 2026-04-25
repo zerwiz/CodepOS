@@ -502,6 +502,17 @@ export default function (pi: ExtensionAPI) {
 }
 ```
 
+### Extension Tool Result Format (CRITICAL)
+Tools must return `{ content: [{ type: "text", text: "..." }] }`. Using `{ message: "..." }` causes runtime errors.
+
+```typescript
+// ✅ CORRECT
+execute: async (args) => ({ content: [{ type: "text", text: "result" }] })
+
+// ❌ WRONG
+execute: async (args) => ({ message: "result" })
+```
+
 ### Skills (Markdown)
 ```markdown
 # My Skill

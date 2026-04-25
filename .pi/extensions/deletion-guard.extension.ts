@@ -24,9 +24,9 @@ export default function (pi: ExtensionAPI) {
     execute: async (args) => {
       const { filePath } = args;
       if (isProtected(filePath)) {
-        return { message: `BLOCKED: ${filePath} is protected` };
+        return { content: [{ type: "text", text: `BLOCKED: ${filePath} is protected` }] };
       }
-      return { message: `OK: ${filePath} can be deleted` };
+      return { content: [{ type: "text", text: `OK: ${filePath} can be deleted` }] };
     },
   });
 }

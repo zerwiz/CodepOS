@@ -36,19 +36,19 @@ export default function (pi: ExtensionAPI): void {
     execute: async (args) => {
       if (args.command) {
         const result = isDangerousCommand(args.command);
-        if (result.blocked) return { message: `BLOCKED: ${result.reason}` };
-        return { message: "OK: Command appears safe" };
+        if (result.blocked) return { content: [{ type: "text", text: `BLOCKED: ${result.reason}` }] };
+        return { content: [{ type: "text", text: "OK: Command appears safe" }] };
       }
       if (args.path && args.mode) {
         if (args.mode === "delete" && NO_DELETE_PATHS.some(p => args.path.includes(p))) {
-          return { message: `BLOCKED: ${args.path} cannot be deleted` };
+          return { content: [{ type: "text", text: `BLOCKED: ${args.path} cannot be deleted` }] };
         }
         if (args.mode === "write" && READONLY_PATHS.some(p => args.path.includes(p))) {
-          return { message: `BLOCKED: ${args.path} is read-only` };
+          return { content: [{ type: "text", text: `BLOCKED: ${args.path} is read-only` }] };
         }
-        return { message: `OK: ${args.path} allowed for ${args.mode}` };
+        return { content: [{ type: "text", text: `OK: ${args.path} allowed for ${args.mode}` }] };
       }
-      return { message: "Provide command or path to check" };
+      return { content: [{ type: "text", text: "Provide command or path to check" }] };
     },
   });
 
@@ -58,17 +58,20 @@ export default function (pi: ExtensionAPI): void {
     parameters: { type: "object", properties: {}, required: [] },
     execute: async () => {
       return {
-        message: [
-          "Damage Control Active",
-          "",
-          "Protected: .env, secrets, credentials, *.pem, *.key",
-          "Read Only: package-lock.json, *.lock, CLAUDE.md, README.md",
-          "No Delete: CLAUDE.md, README.md, LICENSE, .git/, .pi/",
-          "",
-          "Dangerous Commands Blocked:",
-          "  - rm -rf, git reset --hard, git clean -f/-d",
-          "  - chmod 777, sudo rm, terraform destroy",
-        ].join("\n"),
+        content: [{
+          type: "text",
+          text: [
+            "Damage Control Active",
+            "",
+            "Protected: .env, secrets, credentials, *.pem, *.key",
+            "Read Only: package-lock.json, *.lock, CLAUDE.md, README.md",
+            "No Delete: CLAUDE.md, README.md, LICENSE, .git/, .pi/",
+            "",
+            "Dangerous Commands Blocked:",
+            "  - rm -rf, git reset --hard, git clean -f/-d",
+            "  - chmod 777, sudo rm, terraform destroy",
+          ].join("\n"),
+        }],
       };
     },
   });

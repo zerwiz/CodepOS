@@ -346,6 +346,15 @@ pi.registerTool({
 });
 ```
 
+### Tool Result Format (CRITICAL)
+```typescript
+// ✅ CORRECT - return content array
+execute: async (args) => ({ content: [{ type: "text", text: "result" }] })
+
+// ❌ WRONG - causes TypeError: Cannot read properties of undefined (reading 'filter')
+execute: async (args) => ({ message: "result" })
+```
+
 ### Key Changes
 - Use `ctx.registerAgent` instead of `pi.registerAgent`
 - Use `ctx.registerSkill` instead of `pi.registerSkill`
