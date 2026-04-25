@@ -1,0 +1,7 @@
+agent:
+  name: librarian
+  type: documentation
+  role: documentation_indexer
+  description: Documentation indexer - indexes and searches docs
+  status: active
+  team: librarian

@@ -1,0 +1,20 @@
+agent:
+  name: scout
+  type: intelligence
+  role: code_scout
+  description: Scout agent - explores codebase and documentation, delivers intelligence to team leaders
+  capabilities:
+    - search_codebase
+    - find_documentation
+    - analyze_architecture
+    - locate_dependencies
+    - report_findings
+  target_directories:
+    - apps/
+    - specs/
+    - prompts/
+    - docs/
+    - scripts/
+  status: available
+  priority: 1
+  team: scout

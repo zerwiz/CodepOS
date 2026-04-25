@@ -6,17 +6,27 @@
 
 team name *args:
     @echo "🚀 Deploying team: {{name}}..."
-    @if [ -f ".pi/multi-team/agents/{{name}}" ]; then \
-        bun run .pi/multi-team/agents/{{name}} {{args}}; \
-    elif [ -d ".pi/multi-team/agents/{{name}}" ]; then \
-        if [ -f ".pi/multi-team/agents/{{name}}/index.mjs" ]; then \
-            bun run .pi/multi-team/agents/{{name}}/index.mjs {{args}}; \
-        else \
-            echo "⚠️ No index.mjs found for team {{name}}, running generic setup..."; \
-            just {{name}} {{args}} || echo "No recipe found for {{name}}"; \
-        fi \
+    @if [ -f ".pi/multi-team/agents/{{name}}/index.mjs" ]; then \
+        bun run .pi/multi-team/agents/{{name}}/index.mjs {{args}}; \
+    elif [ -f ".pi/multi-team/agents/{{name}}.mjs" ]; then \
+        bun run .pi/multi-team/agents/{{name}}.mjs {{args}}; \
     else \
-        echo "❌ Team {{name}} not found in .pi/multi-team/agents/"; \
+        echo "❌ Team/Agent '{{name}}' not found"; \
+        echo "Available agents:"; ls .pi/multi-team/agents/; \
+        exit 1; \
+    fi
+
+# =========================
+# SINGLE AGENTS
+# =========================
+
+agent name *args:
+    @echo "🤖 Running agent: {{name}}..."
+    @if [ -f ".pi/multi-team/agents/{{name}}/index.mjs" ]; then \
+        bun run .pi/multi-team/agents/{{name}}/index.mjs {{args}}; \
+    else \
+        echo "❌ Agent '{{name}}' not found"; \
+        echo "Available agents:"; ls .pi/multi-team/agents/; \
         exit 1; \
     fi
 

@@ -1,7 +1,7 @@
 name: orchestrator
 role: orchestrator
 team: system
-status: active
+status: inactive
 
 description: >
   Main system agent that manages multi-agent deployments.

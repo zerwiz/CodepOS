@@ -1,235 +1,99 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { execSync } from "child_process";
 
-function safeNotify(ctx: any, message: string) {
-    try {
-        if (ctx?.ui?.notify) ctx.ui.notify(message);
-    } catch {}
-}
-
-function safeInfo(ctx: any, message: string) {
-    try {
-        if (ctx?.ui?.info) ctx.ui.info(message);
-    } catch {}
-}
-
 export default function (pi: ExtensionAPI) {
     pi.registerTool({
         name: "list_codepos_teams",
-        description: "Lists all available CodepOS agent teams in the .pi/multi-team/agents directory.",
-        parameters: {
-            type: "object",
-            properties: {
-                filter: {
-                    type: "string",
-                    description: "Optional filter string to match team names (case-insensitive)",
-                    default: ""
-                }
-            },
-            required: [],
-        },
-        execute: async (args, ctx) => {
+        description: "Lists all available CodepOS agent teams",
+        parameters: { type: "object", properties: {}, required: [] },
+        execute: async () => {
             try {
-                let teams = execSync(`ls -1 .pi/multi-team/agents`, { encoding: "utf-8", cwd: pi.cwd });
-                teams = teams.trim();
-
-                if (!teams) {
-                    return { content: [{ type: "text", text: "No teams found in .pi/multi-team/agents" }] };
-                }
-
-                if (args.filter && args.filter.length > 0) {
-                    const filterLower = args.filter.toLowerCase();
-                    teams = teams.split('\n')
-                        .filter(team => team.toLowerCase().includes(filterLower))
-                        .join('\n');
-                }
-
-                const teamList = teams || "No teams found";
-
-                return { content: [{ type: "text", text: `📦 Available CodepOS Teams:\n\n${teamList}\n\n\nTip: Use \`pi deploy_codepos_team\` to deploy a specific team!` }] };
-            } catch (error: any) {
-                return { content: [{ type: "text", text: `Error listing teams: ${error.message}` }] };
+                const teams = execSync("ls -1 .pi/multi-team/agents", { encoding: "utf-8", cwd: pi.cwd });
+                return { content: [{ type: "text", text: `📦 Available Teams:\n\n${teams}\n\nUse pi deploy_codepos_team teamName=<team>` }] };
+            } catch (e: any) {
+                return { content: [{ type: "text", text: "Error: " + e.message }] };
             }
         }
     });
 
     pi.registerTool({
         name: "deploy_codepos_team",
-        description: "Deploys a specialized CodepOS agent team.",
+        description: "Deploys a CodepOS agent team",
         parameters: {
             type: "object",
             properties: {
-                teamName: {
-                    type: "string",
-                    description: "Name of the team to deploy (e.g., setup, validation-A, ui-gen-A, validation-B, validation-C, planning, design, frontend, testing, database, api-backend, integration, orchestrator)",
-                    enum: ["setup", "validation-A", "validation-B", "validation-C", "planning", "design", "frontend", "testing", "database", "api-backend", "integration", "orchestrator", "ui-gen-A"],
-                },
-                args: {
-                    type: "string",
-                    description: "Optional additional arguments to pass to the team (e.g., --init, --reset, --env VAR=value)",
-                    default: ""
-                }
+                teamName: { type: "string", description: "Team name" },
+                args: { type: "string", description: "Additional args", default: "" }
             },
             required: ["teamName"],
         },
-        execute: async (args, ctx) => {
-            safeNotify(ctx, "Deploying CodepOS Team: " + args.teamName);
-
+        execute: async (args: any) => {
+            const teamName = args?.teamName || args?.name;
+            if (!teamName) {
+                return { content: [{ type: "text", text: "❌ teamName required. Usage: pi deploy_codepos_team teamName=<team>" }] };
+            }
             try {
-                const teamName = args.teamName;
-                const additionalArgs = args.args || "";
-
-                const command = `just team ${teamName}${additionalArgs.length > 0 ? " " + additionalArgs : ""}`;
-
-                safeInfo(ctx, "Executing: " + command);
-
-                const output = execSync(command, { encoding: "utf-8", cwd: pi.cwd });
-
-                return { content: [{ type: "text", text: "✅ Team " + teamName + " deployed successfully!\n\n📋 Output:\n" + output + "\n\n🎯 Next steps: Check the results above. Use pi list_codepos_teams to see all available teams." }] };
-            } catch (error: any) {
-                return { content: [{ type: "text", text: "❌ Error deploying team " + args.teamName + ":\n" + error.message + "\n\n💡 Tip: Make sure you're in the CodepOS root directory before deploying a team." }] };
+                const cmd = `just team ${teamName}${args?.args ? " " + args.args : ""}`;
+                const output = execSync(cmd, { encoding: "utf-8", cwd: pi.cwd });
+                return { content: [{ type: "text", text: `✅ Team ${teamName} deployed!\n\n${output}` }] };
+            } catch (e: any) {
+                return { content: [{ type: "text", text: `❌ Error: ${e.message}` }] };
             }
         }
     });
 
     pi.registerTool({
-        name: "manage_codepos_team",
-        description: "Performs management operations on CodepOS teams (reset, init, clean, etc.).",
-        parameters: {
-            type: "object",
-            properties: {
-                teamName: {
-                    type: "string",
-                    description: "Name of the team to manage",
-                    default: ""
-                },
-                operation: {
-                    type: "string",
-                    description: "Operation to perform: init, reset, clean, health, help",
-                    enum: ["init", "reset", "clean", "health", "help", "status", "list"]
-                },
-                args: {
-                    type: "string",
-                    description: "Additional arguments (e.g., --reset for setup team)",
-                    default: ""
-                }
-            },
-            required: ["operation"],
-        },
-        execute: async (args, ctx) => {
-            safeNotify(ctx, "Managing CodepOS Team: " + args.operation + " on " + (args.teamName || "all"));
-
+        name: "run_scout",
+        description: "Runs the scout agent to analyze codebase",
+        parameters: { type: "object", properties: {}, required: [] },
+        execute: async () => {
             try {
-                const operation = args.operation;
-                const teamName = args.teamName || "";
-                const additionalArgs = args.args || "";
-
-                let command: string;
-
-                switch (operation) {
-                    case "init":
-                        command = `just team setup --init`;
-                        break;
-                    case "reset":
-                        command = `just team setup --reset`;
-                        break;
-                    case "clean":
-                        command = `just clean`;
-                        break;
-                    case "health":
-                        command = `bun run .pi/multi-team/ui/terminal.mjs health`;
-                        break;
-                    case "help":
-                        command = `just help`;
-                        break;
-                    case "status":
-                        command = `bun run .pi/multi-team/ui/terminal.mjs`;
-                        break;
-                    case "list":
-                        command = `just teams list`;
-                        break;
-                    default:
-                        command = `just team ${teamName}${additionalArgs}`;
-                }
-
-                safeInfo(ctx, "Executing: " + command);
-
-                const output = execSync(command, { encoding: "utf-8", cwd: pi.cwd });
-
-                return { content: [{ type: "text", text: "✅ Operation '" + operation + "' completed successfully!\n\n📋 Output:\n" + output + "\n\n🎯 Available operations: init, reset, clean, health, help, status" }] };
-            } catch (error: any) {
-                return { content: [{ type: "text", text: "❌ Error performing operation '" + args.operation + "':\n" + error.message + "\n\n💡 Tip: Make sure you're in the CodepOS root directory." }] };
+                const output = execSync("just agent scout report", { encoding: "utf-8", cwd: pi.cwd });
+                return { content: [{ type: "text", text: `🔍 Scout Report:\n\n${output}` }] };
+            } catch (e: any) {
+                return { content: [{ type: "text", text: `❌ Error: ${e.message}` }] };
             }
         }
     });
 
     pi.registerTool({
-        name: "check_codepos_status",
-        description: "Checks the overall status and health of the CodepOS system.",
-        parameters: {
-            type: "object",
-            properties: {
-                depth: {
-                    type: "string",
-                    description: "Depth of status check: quick (default), detailed, verbose",
-                    enum: ["quick", "detailed", "verbose"],
-                    default: "quick"
-                }
-            },
-            required: [],
-        },
-        execute: async (args, ctx) => {
+        name: "run_sentinel",
+        description: "Runs the sentinel security scanner",
+        parameters: { type: "object", properties: {}, required: [] },
+        execute: async () => {
             try {
-                let status = "📊 CodepOS System Status (Quick)\n\n📦 Agent Teams:\n";
-
-                const teams = execSync("ls -1 .pi/multi-team/agents", { encoding: "utf-8", cwd: pi.cwd });
-                if (teams) {
-                    status += teams.split('\n').map(team => "   - 🟢 " + team).join('\n');
-                }
-
-                status += "\n\n📋 Ready to deploy! Use:\n   - pi list_codepos_teams - See all teams\n   - pi deploy_codepos_team <team> - Deploy a team\n   - pi check_codepos_status <detailed|verbose> - More details";
-
-                return { content: [{ type: "text", text: status }] };
-            } catch (error: any) {
-                return { content: [{ type: "text", text: "❌ Error checking status: " + error.message }] };
+                const output = execSync("just agent sentinel", { encoding: "utf-8", cwd: pi.cwd });
+                return { content: [{ type: "text", text: `🛡️ Sentinel Report:\n\n${output}` }] };
+            } catch (e: any) {
+                return { content: [{ type: "text", text: `❌ Error: ${e.message}` }] };
             }
         }
     });
 
     pi.registerTool({
-        name: "discover_teams",
-        description: "Discovers and analyzes CodepOS teams, showing their manifest information.",
-        parameters: {
-            type: "object",
-            properties: {
-                teamName: {
-                    type: "string",
-                    description: "Optional specific team name to analyze",
-                    default: ""
-                }
-            },
-            required: [],
-        },
-        execute: async (args, ctx) => {
+        name: "run_mapper",
+        description: "Runs the mapper agent for project architecture",
+        parameters: { type: "object", properties: {}, required: [] },
+        execute: async () => {
             try {
-                const teamName = args.teamName || "";
+                const output = execSync("just agent mapper", { encoding: "utf-8", cwd: pi.cwd });
+                return { content: [{ type: "text", text: `🗺️ Project Structure:\n\n${output}` }] };
+            } catch (e: any) {
+                return { content: [{ type: "text", text: `❌ Error: ${e.message}` }] };
+            }
+        }
+    });
 
-                if (!teamName) {
-                    return { content: [{ type: "text", text: "🔍 Team Discovery Mode\n\n📦 Available teams:\n" + (execSync("ls -1 .pi/multi-team/agents", { encoding: "utf-8", cwd: pi.cwd }) || "No teams found") + "\n\n💡 Use pi discover_teams <teamName> to analyze a specific team." }] };
-                }
-
-                const manifestPath = ".pi/multi-team/agents/" + teamName + "/manifest.yaml";
-                let manifest = "No manifest found for this team.";
-
-                try {
-                    manifest = execSync(`cat "${manifestPath}"`, { encoding: "utf-8", cwd: pi.cwd });
-                } catch (e: any) {
-                    manifest = "Team " + teamName + " doesn't have a manifest.yaml or it's not in the agents folder.";
-                }
-
-                return { content: [{ type: "text", text: "📋 Team: " + teamName + "\n\n📄 Manifest:\n" + manifest + "\n\n🚀 Use pi deploy_codepos_team " + teamName + " to deploy this team." }] };
-            } catch (error: any) {
-                return { content: [{ type: "text", text: "❌ Error discovering teams: " + error.message }] };
+    pi.registerTool({
+        name: "run_librarian",
+        description: "Runs the librarian to index documentation",
+        parameters: { type: "object", properties: {}, required: [] },
+        execute: async () => {
+            try {
+                const output = execSync("just agent librarian", { encoding: "utf-8", cwd: pi.cwd });
+                return { content: [{ type: "text", text: `📚 Documentation Index:\n\n${output}` }] };
+            } catch (e: any) {
+                return { content: [{ type: "text", text: `❌ Error: ${e.message}` }] };
             }
         }
     });

@@ -1,0 +1,7 @@
+agent:
+  name: mapper
+  type: architecture
+  role: architecture_mapper
+  description: Architecture mapper - creates visual maps of project structure
+  status: active
+  team: mapper

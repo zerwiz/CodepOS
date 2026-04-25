@@ -9,7 +9,7 @@ agent:
     - read
     - write
     - validate
-  status: active
+  status: inactive
   last_updated: 2024-01-01T00:00:00Z
   dependencies:
     - skill-test

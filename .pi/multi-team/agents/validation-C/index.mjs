@@ -1,17 +1,7 @@
-// Agent index for validation-C
-export {
-  default,
-  agents,
-  spawn,
-  council: true
-} from './agents/validation-C.mjs';
-
-import {spawn, agents} from './agents/multi-agent.mjs';
-
 export default {
-  name: "multi-agent:validation-C",
-  team: "$team",
-  spawn,
-  agents,
-  loaded: true
+  name: "agent:validation-C",
+  team: "validation-C",
+  status: "active",
+  description: "Style Validation Agent - Style guidelines & schema validation",
+  checks: ["style-guidelines", "schema-validation"]
 };
