@@ -1,0 +1,18 @@
+{
+  "name": "synthwave",
+  "fg": "#cccccc",
+  "bg": "#1a0f2e",
+  "accent": "#ff00ff",
+  "success": "#00ff00",
+  "warning": "#ffff00",
+  "error": "#ff0000",
+  "info": "#00ffff",
+  "dim": "#6b6b6b",
+  "muted": "#808080",
+  "border": "#404040",
+  "borderMuted": "#303030",
+  "separator": "#404040",
+  "highlight": "#ff00ff",
+  "activeBorder": "#ff00ff",
+  "statusBar": "#404040"
+}

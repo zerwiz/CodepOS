@@ -1,0 +1,16 @@
+{
+  "colors": {
+    "name": "nord",
+    "foreground": "#e5e5e5",
+    "background": "#2e3440",
+    "accent": "#88c0d0",
+    "success": "#a3be8c",
+    "warning": "#ebcb8b",
+    "error": "#bf616a",
+    "info": "#88c0d0",
+    "dim": "#4c566a",
+    "muted": "#4c566a",
+    "border": "#3b4252",
+    "separator": "#3b4252"
+  }
+}

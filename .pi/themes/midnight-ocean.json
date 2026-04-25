@@ -1,0 +1,18 @@
+{
+  "name": "midnight-ocean",
+  "fg": "#e0e0e0",
+  "bg": "#1a1a2e",
+  "accent": "#4fc3f7",
+  "success": "#00e676",
+  "warning": "#ffeb3b",
+  "error": "#ff5252",
+  "info": "#2196f3",
+  "dim": "#757575",
+  "muted": "#616161",
+  "border": "#333333",
+  "borderMuted": "#2c2c2c",
+  "separator": "#333333",
+  "highlight": "#4fc3f7",
+  "activeBorder": "#4fc3f7",
+  "statusBar": "#1a1a2e"
+}

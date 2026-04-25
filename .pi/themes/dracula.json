@@ -1,0 +1,16 @@
+{
+  "colors": {
+    "name": "dracula",
+    "foreground": "#f8f8f2",
+    "background": "#282a36",
+    "accent": "#bd93f9",
+    "success": "#50fa7b",
+    "warning": "#f1fa8c",
+    "error": "#ff5555",
+    "info": "#8be9fd",
+    "dim": "#6272a4",
+    "muted": "#6272a4",
+    "border": "#44475a",
+    "separator": "#44475a"
+  }
+}

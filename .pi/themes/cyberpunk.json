@@ -1,0 +1,18 @@
+{
+  "name": "cyberpunk",
+  "fg": "#f0f0f0",
+  "bg": "#0d1117",
+  "accent": "#d0d6f9",
+  "success": "#00e676",
+  "warning": "#ffeb3b",
+  "error": "#ff1744",
+  "info": "#2979ff",
+  "dim": "#8b949e",
+  "muted": "#6e7681",
+  "border": "#30363d",
+  "borderMuted": "#21262d",
+  "separator": "#30363d",
+  "highlight": "#79c0ff",
+  "activeBorder": "#d0d6f9",
+  "statusBar": "#161b22"
+}

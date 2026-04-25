@@ -1,0 +1,18 @@
+{
+  "name": "tokyo-night",
+  "fg": "#a9b1d6",
+  "bg": "#1a1b26",
+  "accent": "#7aa2f7",
+  "success": "#9ece6a",
+  "warning": "#e0af68",
+  "error": "#f7768e",
+  "info": "#7dcfff",
+  "dim": "#565f89",
+  "muted": "#49576e",
+  "border": "#24283b",
+  "borderMuted": "#1f2335",
+  "separator": "#24283b",
+  "highlight": "#7aa2f7",
+  "activeBorder": "#7aa2f7",
+  "statusBar": "#1a1b26"
+}
