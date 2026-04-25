@@ -1,28 +1,32 @@
-export default function (pi: any) {
-  pi.on('session_start', async () => {
-    console.log('[deletion-guard] Protection active');
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+
+const NO_DELETE = [".git/", ".pi/", "CLAUDE.md", "README.md", "LICENSE"];
+
+function isProtected(path: string): boolean {
+  return NO_DELETE.some((p) => path.includes(p));
+}
+
+export default function (pi: ExtensionAPI) {
+  pi.on("session_start", async () => {
+    pi.notify("Deletion guard active", "info");
   });
 
   pi.registerTool({
-    name: 'blockFileDeletion',
-    description: 'Blocks deletion for non-safe files',
+    name: "block_file_deletion",
+    description: "Check if a file can be deleted",
     parameters: {
-      type: 'object',
+      type: "object",
       properties: {
-        filePath: { type: 'string', description: 'Path to file' },
-        reason: { type: 'string', description: 'Why deletion needed' }
+        filePath: { type: "string", description: "Path to file" },
       },
-      required: ['filePath']
+      required: ["filePath"],
     },
-    execute: async ({ filePath }: { filePath: string; reason?: string }) => {
-      const ext = filePath.split('/').pop() || '';
-      const isSafe = ['.log', '.tmp'].some(i => i === '.' + ext);
-      
-      if (!isSafe) {
-        return { content: [{ type: "text", text: `❌ Deletion blocked for: ${filePath}` }] };
+    execute: async (args) => {
+      const { filePath } = args;
+      if (isProtected(filePath)) {
+        return { message: `BLOCKED: ${filePath} is protected` };
       }
-      
-      return { content: [{ type: "text", text: `✅ Safe to delete: ${filePath}` }] };
-    }
+      return { message: `OK: ${filePath} can be deleted` };
+    },
   });
 }

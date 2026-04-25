@@ -1,22 +1,4 @@
-/**
- * CodepOS Theme Cycler Extension
- *
- * Provides theme switching functionality for the pi CLI terminal UI.
- * Allows cycling through available themes and applying theme presets.
- *
- * Usage:
- *   pi cycle_theme [next|prev|<theme_name>]
- *   pi theme_status
- *
- * @version 1.0.0
- * @author CodepOS Team
- * @license MIT
- */
-
-import type {
-  ExtensionAPI,
-  ExtensionContext,
-} from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
 interface ThemeDefinition {
   name: string;
@@ -37,9 +19,6 @@ interface ThemeDefinition {
   statusBar: string;
 }
 
-/**
- * Available theme list
- */
 const THEMES: ThemeDefinition[] = [
   {
     name: "catppuccin-mocha",
@@ -279,94 +258,11 @@ const THEMES: ThemeDefinition[] = [
 
 let currentThemeIndex = 0;
 
-/**
- * Update status bar with current theme info
- */
-function updateStatus(ctx: ExtensionContext, themeName: string): void {
-  if (!ctx?.hasUI) return;
-
-  try {
-    ctx.ui.setTheme(themeName);
-  } catch {}
-
-  ctx.ui.setStatus("theme", `${themeName}`);
-}
-
-/**
- * Show theme swatch visualization
- */
-function showSwatch(ctx: ExtensionContext, theme: ThemeDefinition): void {
-  if (!ctx.hasUI) return;
-
-  const combined = `Theme: ${theme.name}\nAccent: ${theme.accent}`;
-  ctx.ui.notify(combined, "info");
-}
-
-/**
- * Get list of all available themes
- */
-function getThemeList(): ThemeDefinition[] {
-  return THEMES;
-}
-
-/**
- * Find current theme index
- */
-function findCurrentIndex(themeName: string): number {
-  const themes = getThemeList();
-  const current = themes.findIndex((t) => t.name === themeName);
-  return current >= 0 ? current : 0;
-}
-
-/**
- * Cycle to next or previous theme
- */
-function cycleTheme(
-  ctx: ExtensionContext,
-  direction: "next" | "prev" | number,
-): string {
-  const themes = getThemeList();
-  let index = currentThemeIndex;
-
-  if (typeof direction === "number") {
-    index = direction;
-  } else {
-    if (direction === "next") {
-      index = (index + 1) % themes.length;
-    } else if (direction === "prev") {
-      index = (index - 1 + themes.length) % themes.length;
-    }
-  }
-
-  const theme = themes[index];
-  const result = `Switched to theme: ${theme.name}`;
-
-  updateStatus(ctx, theme.name);
-  showSwatch(ctx, theme);
-
-  return result;
-}
-
-/**
- * Set specific theme by name
- */
-function setTheme(ctx: ExtensionContext, themeName: string): string {
-  const themes = getThemeList();
-  const found = themes.find((t) => t.name === themeName);
-
-  if (!found) {
-    return `Theme not found: ${themeName}`;
-  }
-
-  currentThemeIndex = themes.findIndex((t) => t.name === themeName);
-  updateStatus(ctx, found.name);
-  showSwatch(ctx, found);
-
-  return `Applied theme: ${found.name}`;
+function getCurrentTheme(): ThemeDefinition {
+  return THEMES[currentThemeIndex];
 }
 
 export default function (pi: ExtensionAPI): void {
-  // Register theme cycling tool
   pi.registerTool({
     name: "codepos_cycle_theme",
     description: "Cycle through available themes or set a specific theme",
@@ -388,34 +284,32 @@ export default function (pi: ExtensionAPI): void {
       },
       required: [],
     },
-    execute: async (args, ctx) => {
-      if (!ctx.hasUI)
-        return { message: "UI not available for theme switching" };
-
+    execute: async (args) => {
       if (args.themeName && args.themeName.length > 0) {
-        const result = setTheme(ctx, args.themeName);
-        return { message: result };
+        const found = THEMES.find((t) => t.name === args.themeName);
+        if (!found) {
+          return { message: `Theme not found: ${args.themeName}` };
+        }
+        currentThemeIndex = THEMES.findIndex((t) => t.name === args.themeName);
+        pi.notify(`Applied theme: ${found.name}`, "success");
+        return { message: `Applied theme: ${found.name}` };
       }
 
       const direction = args.direction || "next";
-
       if (direction === "random") {
-        const randomIndex = Math.floor(Math.random() * THEMES.length);
-        const randomTheme = THEMES[randomIndex];
-        currentThemeIndex = randomIndex;
-        updateStatus(ctx, randomTheme.name);
-        showSwatch(ctx, randomTheme);
-        return {
-          message: `Random theme applied: ${randomTheme.name}`,
-        };
+        currentThemeIndex = Math.floor(Math.random() * THEMES.length);
+      } else if (direction === "next") {
+        currentThemeIndex = (currentThemeIndex + 1) % THEMES.length;
+      } else if (direction === "prev") {
+        currentThemeIndex = (currentThemeIndex - 1 + THEMES.length) % THEMES.length;
       }
 
-      const result = cycleTheme(ctx, direction);
-      return { message: result };
+      const theme = getCurrentTheme();
+      pi.notify(`Theme: ${theme.name}`, "info");
+      return { message: `Switched to theme: ${theme.name}` };
     },
   });
 
-  // Register theme status tool
   pi.registerTool({
     name: "codepos_theme_status",
     description: "Get current theme information",
@@ -430,35 +324,20 @@ export default function (pi: ExtensionAPI): void {
       },
       required: [],
     },
-    execute: async (args, ctx) => {
-      if (!ctx.hasUI) return { message: "UI not available" };
-
-      const currentTheme = getThemeList()[currentThemeIndex];
-      let status = `🎨 Current Theme: ${currentTheme.name}\n`;
+    execute: async (args) => {
+      const theme = getCurrentTheme();
+      let status = `Current Theme: ${theme.name}`;
 
       if (args.detailed) {
-        status += `  Foreground: ${currentTheme.fg}\n`;
-        status += `  Background: ${currentTheme.bg}\n`;
-        status += `  Accent: ${currentTheme.accent}\n`;
-        status += `  Success: ${currentTheme.success}\n`;
-        status += `  Warning: ${currentTheme.warning}\n`;
-        status += `  Error: ${currentTheme.error}\n`;
-        status += `  Info: ${currentTheme.info}\n`;
-        status += `  Dim: ${currentTheme.dim}\n`;
-        status += `  Muted: ${currentTheme.muted}\n`;
-        status += `  Border: ${currentTheme.border}\n`;
-        status += `  Highlight: ${currentTheme.highlight}\n`;
-        status += `  Active Border: ${currentTheme.activeBorder}\n`;
-        status += `  Status Bar: ${currentTheme.statusBar}\n`;
+        status += `\n  Accent: ${theme.accent}`;
+        status += `\n  Background: ${theme.bg}`;
       }
 
-      status += `\nAvailable themes: ${getThemeList().length}`;
-
+      status += `\n\nAvailable themes: ${THEMES.length}`;
       return { message: status };
     },
   });
 
-  // Register list themes tool
   pi.registerTool({
     name: "codepos_list_themes",
     description: "List all available themes",
@@ -473,66 +352,48 @@ export default function (pi: ExtensionAPI): void {
       },
       required: [],
     },
-    execute: async (args, ctx) => {
-      if (!ctx.hasUI) return { message: "UI not available" };
-
-      let themes = getThemeList();
-
+    execute: async (args) => {
+      let themes = THEMES;
       if (args.filter && args.filter.length > 0) {
         themes = themes.filter((t) =>
           t.name.toLowerCase().includes(args.filter.toLowerCase()),
         );
       }
 
-      let list = `📦 Available CodepOS Themes:\n`;
+      let list = `Available Themes:\n`;
       themes.forEach((theme, index) => {
-        list += `  ${index + 1}. ${theme.name}\n`;
+        list += `${index + 1}. ${theme.name}\n`;
       });
 
       if (themes.length > 0) {
-        list += `\nUse 'codepos_cycle_theme' to switch themes.`;
-        list += `\nOr use 'codepos_set_theme' with theme name.`;
+        list += `\nUse codepos_cycle_theme to switch.`;
       }
 
       return { message: list };
     },
   });
 
-  // Session lifecycle - apply default theme on start
-  pi.on("session_start", async (_event, ctx) => {
-    // Apply default theme (dracula - index 2)
+  pi.on("session_start", async () => {
     currentThemeIndex = 2;
-    updateStatus(ctx, THEMES[2].name);
-
-    // Show welcome message with theme
-    if (ctx.hasUI) {
-      ctx.ui.notify(`CodepOS: ${THEMES[currentThemeIndex].name}`, "info");
-    }
+    const theme = getCurrentTheme();
+    pi.notify(`CodepOS Theme: ${theme.name}`, "info");
   });
 
   pi.registerShortcut("ctrl+'", {
     description: "Next theme",
-    handler: async (ctx) => {
-      if (!ctx.hasUI) return;
-      const themes = ctx.ui.getAllThemes();
-      const current = ctx.ui.theme.name;
-      const idx = themes.findIndex((t) => t.name === current);
-      const next = themes[(idx + 1) % themes.length];
-      ctx.ui.setTheme(next.name);
-      ctx.ui.notify(`Theme: ${next.name}`, "info");
+    handler: async () => {
+      currentThemeIndex = (currentThemeIndex + 1) % THEMES.length;
+      const theme = getCurrentTheme();
+      pi.notify(`Theme: ${theme.name}`, "info");
     },
   });
 
   pi.registerShortcut("ctrl+;", {
     description: "Previous theme",
-    handler: async (ctx) => {
-      if (!ctx.hasUI) return;
-      const themes = ctx.ui.getAllThemes();
-      const current = ctx.ui.theme.name;
-      const idx = themes.findIndex((t) => t.name === current);
-      const prev = themes[(idx - 1 + themes.length) % themes.length];
-      ctx.ui.setTheme(prev.name);
-      ctx.ui.notify(`Theme: ${prev.name}`, "info");
+    handler: async () => {
+      currentThemeIndex = (currentThemeIndex - 1 + THEMES.length) % THEMES.length;
+      const theme = getCurrentTheme();
+      pi.notify(`Theme: ${theme.name}`, "info");
     },
   });
 }
