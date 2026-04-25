@@ -465,3 +465,234 @@ The current implementation **fully follows Pi's conventions** for:
 **Status**: OPERATIONAL  
 **Technical Completeness**: 65% (Framework Complete, Application Logic In Progress)
 
+---
+
+# 🏇 CodepOS - Harness for www.pi.dev
+
+## The Core Concept
+
+```
+┌─────────────────────────────────────────────────────┐
+│               www.pi.dev (The LLM Agent)             │
+│  Mario Zechner's minimal coding harness              │
+│  4 tools: read, write, edit, bash                    │
+│  Minimal system prompt (<1000 tokens)                │
+│  Provider agnostic (Anthropic, OpenAI, Google, etc)  │
+└──────────────────────────────────────────────��──────┘
+                          ↑
+         CodepOS extends pi.dev with:
+         ├── Skills (.pi/skills/) - Instructions
+         ├── Extensions (.pi/extensions/) - Custom tools
+         └── Scanners (scripts executed by pi)
+```
+
+**Key Insight:** pi.dev IS the LLM agent. CodepOS is a harness that EXTENDS pi.dev, not a replacement.
+
+---
+
+## How pi.dev Works
+
+From pi.dev official docs:
+
+### Philosophy
+- **Minimal toolset**: Only 4 tools (read, write, edit, bash) - frontier models know the rest via bash
+- **No built-in sub-agents**: Spawn via tmux or build with extensions
+- **No permission theater**: Trust at OS level, not prompt level
+- **Progressive disclosure**: Don't load docs upfront, load when needed
+- **Session as tree**: Fork and branch sessions, not just linear chat
+
+### No Sub-Agents Built-In
+
+pi.dev explicitly states:
+> "No sub-agents built-in. Spawn pi instances via tmux, or build your own with extensions."
+
+For context gathering, do it FIRST in a separate session, create an artifact, then use it in the main session.
+
+### How to Extend pi.dev
+
+```bash
+# 1. Skills - Markdown files with instructions
+.pi/skills/my-skill.md
+
+# 2. Extensions - TypeScript modules
+.pi/extensions/my-extension.ts
+
+# 3. Themes - Visual customization
+.pi/themes/my-theme.ts
+```
+
+---
+
+## CodepOS Architecture
+
+```
+CodepOS/
+├── .pi/
+│   ├── extensions/           # TypeScript extensions for pi
+│   │   ├── team_manager.ts   # Tools: run_scout, deploy_codepos_team, etc
+│   │   ├── theme-cycler.ts   # Theme management
+│   │   └── deletion-guard.ts # Safe deletion helpers
+│   │
+│   ├── skills/               # Instructions for pi
+│   │   └── codepos-orchestrator.md  # Teaches pi how to use CodepOS
+│   │
+│   ├── multi-team/           # Multi-team system
+│   │   ├── agents/           # Scanner scripts
+│   │   │   ├── scout/        # File structure analysis
+│   │   │   ├── sentinel/     # Security pattern scanning
+│   │   │   ├── librarian/    # Documentation indexing
+│   │   │   └── mapper/       # Architecture mapping
+│   │   ├── teams/            # Team definitions
+│   │   │   └── security/     # Security workflow
+│   │   └── tools/            # Standalone tools
+│   │
+│   ├── agents/               # (Future) LLM agent definitions
+│   └── themes/              # pi themes
+│
+├── apps/                     # Application code
+├── justfile                  # CLI entry points
+└── harness/                  # CI/CD harness
+```
+
+---
+
+## Execution Flow
+
+```
+1. User starts pi
+   └─> pi.dev loads as the LLM agent
+
+2. pi auto-loads:
+   └─> .pi/skills/*.md (instructions)
+   └─> .pi/extensions/*.ts (custom tools)
+
+3. User says: "Run scout to analyze the codebase"
+
+4. pi reads skill: "To run scout, execute `just agent scout`"
+
+5. pi executes: `just agent scout`
+
+6. Scanner runs: scout.mjs outputs structure analysis
+
+7. pi formats output and shows to user
+```
+
+---
+
+## Available Tools (via team_manager.ts)
+
+When running `pi`, these tools are available:
+
+| Tool | Command | Purpose |
+|------|---------|---------|
+| `run_scout` | Scans codebase | File counting, structure |
+| `run_sentinel` | Security scan | Pattern-based security check |
+| `run_mapper` | Architecture | Visual tree of project |
+| `run_librarian` | Docs index | Documentation discovery |
+| `list_codepos_teams` | List agents | Shows all available agents |
+| `deploy_codepos_team` | Deploy team | Run a team workflow |
+
+---
+
+## Scanners (No LLM)
+
+Located in `.pi/multi-team/agents/<name>/index.mjs`
+
+These are **fast scripts, NOT LLM agents**:
+
+| Scanner | Command | Purpose |
+|---------|---------|---------|
+| scout | `just agent scout` | File structure, counts |
+| sentinel | `just agent sentinel` | Security patterns |
+| librarian | `just agent librarian` | Docs indexing |
+| mapper | `just agent mapper` | Architecture tree |
+
+Usage:
+```bash
+just agent scout
+just agent sentinel
+just agent mapper
+just agent librarian
+```
+
+---
+
+## Teams (Future)
+
+Teams combine scanners + workflows:
+
+| Team | Components | Command |
+|------|------------|---------|
+| security | sentinel + audit flow | `just team security` |
+
+---
+
+## Quick Reference
+
+```bash
+# Start the LLM agent (pi.dev)
+pi
+
+# From inside pi, use these tools:
+run_scout                    # Analyze codebase
+run_sentinel                 # Security scan
+deploy_codepos_team teamName=scout  # Deploy a team
+
+# Direct CLI (no LLM)
+just agent scout
+just agent sentinel
+just agent mapper
+just agent librarian
+```
+
+---
+
+## Why Not tintinweb/pi-subagents?
+
+pi.dev explicitly says sub-agents should be built via extensions or tmux, not a separate runtime.
+
+CodepOS follows pi.dev's philosophy:
+- **pi.dev IS the LLM agent** - use Mario's implementation
+- **CodepOS extends pi.dev** - skills + extensions + scanners
+- **No duplicate runtime** - don't reinvent the wheel
+
+---
+
+## Extension Example: team_manager.ts
+
+```typescript
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import { execSync } from "child_process";
+
+export default function (pi: ExtensionAPI) {
+    pi.registerTool({
+        name: "run_scout",
+        description: "Runs the scout scanner to analyze codebase",
+        execute: async () => {
+            try {
+                const output = execSync("just agent scout", { cwd: pi.cwd });
+                return { content: [{ type: "text", text: output }] };
+            } catch (e: any) {
+                return { content: [{ type: "text", text: `Error: ${e.message}` }] };
+            }
+        }
+    });
+}
+```
+
+---
+
+## Summary
+
+| Concept | What It Is |
+|---------|------------|
+| **pi.dev** | The LLM agent (Mario Zechner's harness) |
+| **CodepOS** | Harness that extends pi.dev |
+| **Skills** | Instructions loaded by pi |
+| **Extensions** | Custom tools registered with pi |
+| **Scanners** | Scripts that pi executes |
+| **Teams** | Workflow combinations |
+
+**CodepOS is NOT a replacement for pi.dev - it's a layer on top that provides specialized workflows.**
+
+
