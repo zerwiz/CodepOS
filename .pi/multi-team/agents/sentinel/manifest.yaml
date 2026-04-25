@@ -1,0 +1,7 @@
+agent:
+  name: sentinel
+  type: security
+  role: security_scanner
+  description: Security scanner agent - scans for vulnerabilities
+  status: active
+  team: sentinel

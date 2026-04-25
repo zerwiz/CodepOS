@@ -1,17 +1,18 @@
+#!/usr/bin/env uv run --script
 # /// script
 # requires-python = ">=3.8"
 # dependencies = ["pyyaml"]
 # ///
 """
 Claude Code Security Firewall - Python/UV Implementation
-=========================================================
+=====================
 
 Blocks dangerous commands before execution via PreToolUse hook.
-Loads patterns from patterns.yaml for easy customization.
+Handles patterns from YAML config file.
 
 Exit codes:
-  0 = Allow command (or JSON output with permissionDecision)
-  2 = Block command (stderr fed back to Claude)
+  0 = Allow command
+  2 = Block command
 
 JSON output for ask patterns:
   {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "ask", "permissionDecisionReason": ". . ."}}
@@ -27,6 +28,13 @@ from typing import Tuple, List, Dict, Any
 
 import yaml
 
+def expand_path_with_tilde(path: str) -> str:
+    """Expand a path, handling tildes."""
+    if path.startswith("~"):
+        expanded = os.path.expanduser(path)
+    else:
+        expanded = path
+    return expanded
 
 def expand_path_with_project_root(path: str, project_root: str = "") -> str:
     """Expand a path using PROJECT_ROOT for relative paths.
@@ -36,32 +44,27 @@ def expand_path_with_project_root(path: str, project_root: str = "") -> str:
     If path is user-tilde (~), expand it.
     If project_root is None or empty, return the path unchanged.
     """
-    # Handle literal tildes
+    path = path.rstrip("/")
+
     if path.startswith("~"):
-        expanded = os.path.expanduser(path)
+        expanded = expand_path_with_tilde(path)
     else:
         expanded = path
 
-    # If project_root is None or empty, skip expansion
     if not project_root:
         return expanded
 
-    # Absolute paths - skip project_root expansion
     if os.path.isabs(expanded):
         return expanded
 
-    # For CodepOS, we want .tmp/ and relative paths to be relative to project_root
     if expanded.startswith(".") or ("/" in expanded and not expanded.startswith("/")):
-        return os.path.join(project_root, expanded)
+        expanded = os.path.join(project_root.rstrip("/"), expanded.lstrip("./"))
+        return expanded
 
     return expanded
 
+# === OPERATION PATTERNS ===
 
-# === OPERATION PATTERNS - Edit these to customize what operations are blocked
-# ===
-# {path} will be replaced with the escaped path at runtime
-
-# Operations blocked for READ-ONLY paths (all modifications)
 WRITE_PATTERNS = [
     (r">\s*{path}", "write"),
     (r"\btee\s+(?!.*-a).*{path}", "write"),
@@ -102,7 +105,6 @@ TRUNCATE_PATTERNS = [
     (r":\s*>\s*{path}", "truncate"),
 ]
 
-# Combined patterns for read-only paths (block ALL modifications)
 READ_ONLY_BLOCKED = (
     WRITE_PATTERNS +
     APPEND_PATTERNS +
@@ -113,15 +115,12 @@ READ_ONLY_BLOCKED = (
     TRUNCATE_PATTERNS
 )
 
-# Patterns for no-delete paths (block ONLY delete operations)
 NO_DELETE_BLOCKED = DELETE_PATTERNS
-
 
 def load_config() -> Dict[str, Any]:
     """Load patterns from YAML config file."""
     config_path = None
 
-    # 1. Check project_hooks directory (installed location)
     project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
     if project_dir:
         project_config = Path(project_dir) / ".claude" / "hooks" / "damage-control" / "patterns.yaml"
@@ -129,14 +128,10 @@ def load_config() -> Dict[str, Any]:
             config_path = project_config
             print(f"Loading config from: {project_config}", file=sys.stderr)
 
-    # 1.5 Check settings.json in current directory
     settings_path = Path("settings.json")
     if settings_path.exists():
-        # Load settings.json
         with open(settings_path, "r") as f:
             settings = json.load(f)
-
-        # Get PROJECT_ROOT from settings.json
         project_root = settings.get("PROJECT_ROOT", "")
         if project_root:
             config_path = Path(project_root) / ".claude" / "hooks" / "damage-control" / "patterns.yaml"
@@ -145,18 +140,15 @@ def load_config() -> Dict[str, Any]:
             else:
                 print(f"Config pattern file not found at: {config_path}", file=sys.stderr)
 
-    # 2. Check script's own directory
     script_dir = Path(__file__).parent
     local_config = script_dir / "patterns.yaml"
     if local_config.exists():
         config_path = local_config
         print(f"Loading config from local: {config_path}", file=sys.stderr)
 
-    # 3. Check skill root directory
     skill_root = script_dir.parent.parent / "patterns.yaml"
     if skill_root.exists():
         print(f"Falling back to skill root: {skill_root}", file=sys.stderr)
-        # Only use if the above didn't work
         if config_path is None:
             config_path = skill_root
 
@@ -167,10 +159,35 @@ def load_config() -> Dict[str, Any]:
     with open(config_path, "r") as f:
         return yaml.safe_load(f) or {}
 
+def is_glob_pattern(pattern: str) -> bool:
+    """Check if pattern contains glob wildcards."""
+    return "*" in pattern or "?" in pattern or "[" in pattern
+
+def glob_to_regex(glob_pattern: str) -> str:
+    """Convert a glob pattern to a regex pattern.
+
+    Handles *, ?, [ ] patterns. Directories end with /.
+    """
+    result = ""
+    in_command = False
+    for char in glob_pattern:
+        if char == "/" and not in_command:
+            result += r"/"
+            in_command = True
+        elif char == "*":
+            result += r"[^\s/]*)"
+        elif char == "?":
+            result += r"[^\s/]"
+        elif char in r"\.^$+{}[]|()":
+            result += "\\" + char
+        elif char == "^" and not in_command:
+            result += "^"
+        else:
+            result += char
+    return result
 
 def check_path_patterns(command: str, path: str, patterns: List[Tuple[str, str]], project_root: str, path_type: str) -> Tuple[bool, str]:
-    """Check command against a list of patterns for a specific path."""
-    # Expand path using PROJECT_ROOT if it's relative
+    """Check command against patterns for a specific path."""
     expanded = expand_path_with_project_root(path, project_root)
 
     if is_glob_pattern(expanded):
@@ -185,7 +202,6 @@ def check_path_patterns(command: str, path: str, patterns: List[Tuple[str, str]]
     else:
         escaped_expanded = re.escape(expanded)
         escaped_original = re.escape(path) if not path.startswith("~") else os.path.expanduser(path)
-
         for pattern_template, operation in patterns:
             try:
                 pattern_expanded = pattern_template.replace("{path}", escaped_expanded)
@@ -197,35 +213,95 @@ def check_path_patterns(command: str, path: str, patterns: List[Tuple[str, str]]
 
     return False, ""
 
+def extract_paths_from_command(command: str, project_root: str = "") -> List[str]:
+    """Extract all file paths from a command that can be matched against patterns.
 
-def is_glob_pattern(pattern: str) -> bool:
-    """Check if pattern contains glob wildcards."""
-    return "*" in pattern or "?" in pattern or "[" in pattern
+    Extracts paths after common prefixes like cat, ls, cp, mv, rm, chmod, etc.
+    Returns list of expanded paths.
+    """
+    import re
+    
+    paths = []
+    
+    # Extract quoted strings
+    quoted = re.findall(r'["\']([^"\']+)["\"]', command)
+    for path in quoted:
+        paths.append(expand_path_with_project_root(path, project_root))
+    
+    # Extract unquoted words that could be paths
+    # Split command by spaces and check each word
+    words = command.split()
+    for word in words:
+        # Skip known command names and flags
+        if word in ["cat", "echo", "ls", "find", "grep", "test", "file", "mkdir", 
+                     "rm", "cp", "mv", "echo", "pwd", "whoami", "date", "hostname", 
+                     "env", "set", "export", "unset", "source", ".", "sh", "bash", "zsh", 
+                     "python", "node", "npm", "cd", "pushd", "popd", "dirs", "fc", "fg", "bg", 
+                     "kill", "jobs", "jobs", "wait", "trap", "hash", "alias", "unalias", "type", 
+                     "which", "whereis", "readlink", "ln", "ln", "touch", "rm", "true", "false", 
+                     "exit", "exit", "read", "seq", "for", "in", "done", "if", "else", "fi", 
+                     "while", "until", "function", "local", "case", "esac", "select", "break", 
+                     "continue", "return", "shift", "eval", "exec"]:
+            continue
+        # Skip options/flags
+        if word.startswith("-") or .		" in word::
+            continue
+        # Skip if it's a flag that ends with a path
+        if "_" in word and word.endswith("="):
+            continue
+        
+        # Remove any trailing newline or whitespace
+        path = path.rstrip("/\n\r\t")
+        
+        # Only accept non-empty paths
+        if path == "":
+            continue
+        
+        paths.append(path)
+    
+    return list(set(paths))
 
 
-def glob_to_regex(glob_pattern: str) -> str:
-    """Convert a glob pattern to a regex pattern for matching in commands."""
-    result = ""
-    for char in glob_pattern:
-        if char == "*":
-            result += r"[^\s/]*"
-        elif char == "?":
-            result += r"[^\s/]"
-        elif char in r"\.^$+{}[]|()":
-            result += "\\" + char
-        else:
-            result += char
-    return result
+def check_paths(command: str, config: Dict[str, Any], project_root: str = "") -> Tuple[bool, str]:
+    """Check if command accesses restricted paths using fnmatch.
 
+    Returns (blocked, reason).
+    """
+    zero_access_paths = config.get("zeroAccessPaths", [])
+    read_only_paths = config.get("readOnlyPaths", [])
+    no_delete_paths = config.get("noDeletePaths", [])
+
+    # Extract paths from the command
+    extracted_paths = extract_paths_from_command(command, project_root)
+
+    # Check each extracted path against all restricted patterns
+    for check_path in extracted_paths:
+        # Check zero access paths
+        for zero_path in zero_access_paths:
+            expanded_zero_path = expand_path_with_project_root(zero_path, project_root)
+
+            try:
+                if fnmatch.fnmatch(check_path, expanded_zero_path + "*") or fnmatch.fnmatch(check_path, expanded_zero_path):
+                    return True, f"Blocked: zero-access path {expanded_zero_path} (no operations allowed on: {check_path})"
+            except:
+                continue
+
+        # Check read-only paths
+        for readonly in read_only_paths:
+            blocked, reason = check_path_patterns(check_path, readonly, READ_ONLY_BLOCKED, project_root, "read-only path")
+            if blocked:
+                return True, reason
+
+        # Check no-delete paths
+        for no_delete in no_delete_paths:
+            blocked, reason = check_path_patterns(check_path, no_delete, NO_DELETE_BLOCKED, project_root, "no-delete path")
+            if blocked:
+                return True, reason
+
+    return False, ""
 
 def check_command(command: str, config: Dict[str, Any], project_root: str = "") -> Tuple[bool, bool, str]:
-    """Check if command should be blocked or requires confirmation.
-
-    Returns: (blocked, ask, reason)
-      - blocked=True, ask=False: Block the command
-      - blocked=False, ask=True: Show confirmation dialog
-      - blocked=False, ask=False: Allow the command
-    """
+    """Check if command should be blocked or requires confirmation."""
     patterns = config.get("bashToolPatterns", [])
     zero_access_paths = config.get("zeroAccessPaths", [])
     read_only_paths = config.get("readOnlyPaths", [])
@@ -240,47 +316,22 @@ def check_command(command: str, config: Dict[str, Any], project_root: str = "") 
         try:
             if re.search(pattern, command, re.IGNORECASE):
                 if should_ask:
-                    return False, True, reason  # Ask for confirmation
+                    return False, True, reason
                 else:
-                    return True, False, f"Blocked: {reason}"  # Block
+                    return True, False, f"Blocked: {reason}"
         except re.error:
             continue
 
-    # 2. Check for ANY access to zero-access paths (including reads)
-    for zero_path in zero_access_paths:
-        if is_glob_pattern(zero_path):
-            glob_regex = glob_to_regex(zero_path)
-            try:
-                if re.search(glob_regex, command, re.IGNORECASE):
-                    return True, False, f"Blocked: zero-access pattern {zero_path} (no operations allowed)"
-            except re.error:
-                continue
-        else:
-            expanded = expand_path_with_project_root(zero_path, project_root)
-            escaped_expanded = re.escape(expanded)
-            escaped_original = re.escape(zero_path) if not zero_path.startswith("~") else os.path.expanduser(zero_path)
-            if re.search(escaped_expanded, command) or re.search(escaped_original, command):
-                return True, False, f"Blocked: zero-access path {zero_path} (no operations allowed)"
-
-    # 3. Check for modifications to read-only paths (reads allowed)
-    for readonly in read_only_paths:
-        blocked, reason = check_path_patterns(command, readonly, READ_ONLY_BLOCKED, project_root, "read-only path")
-        if blocked:
-            return True, False, reason
-
-    # 4. Check for deletions on no-delete paths (read/write/edit allowed)
-    for no_delete in no_delete_paths:
-        blocked, reason = check_path_patterns(command, no_delete, NO_DELETE_BLOCKED, project_root, "no-delete path")
-        if blocked:
-            return True, False, reason
+    # 2. Check for access to restricted paths (zero access, read-only, no-delete)
+    blocked, reason = check_paths(command, config, project_root)
+    if blocked:
+        return True, False, reason
 
     return False, False, ""
-
 
 def main() -> None:
     config = load_config()
 
-    # Also try to get PROJECT_ROOT from environment or settings
     project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
     if not project_dir:
         settings_path = Path("settings.json")
@@ -290,7 +341,6 @@ def main() -> None:
                 if "PROJECT_ROOT" in settings:
                     project_dir = settings["PROJECT_ROOT"]
 
-    # Read hook input from stdin
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError as e:
@@ -301,25 +351,18 @@ def main() -> None:
         sys.exit(1)
 
     tool_name = input_data.get("tool_name", "")
-    tool_input = input_data.get("tool_input", {})
+    command = input_data.get("tool_input", {}).get("command", "")
 
-    # Only check Bash commands
-    if tool_name != "Bash":
-        sys.exit(0)
-
-    command = tool_input.get("command", "")
     if not command:
+        print("Error: No command provided", file=sys.stderr)
         sys.exit(0)
 
-    # Check the command
-    is_blocked, should_ask, reason = check_command(command, config, project_dir)
+    blocked, ask, reason = check_command(command, config, project_dir)
 
-    if is_blocked:
-        print(f"SECURITY: {reason}", file=sys.stderr)
-        print(f"Command: {command[:100]}{'...' if len(command) > 100 else ''}", file=sys.stderr)
+    if blocked:
+        print(reason, file=sys.stderr)
         sys.exit(2)
-    elif should_ask:
-        # Output JSON to trigger confirmation dialog
+    elif ask:
         output = {
             "hookSpecificOutput": {
                 "hookEventName": "PreToolUse",
@@ -328,10 +371,9 @@ def main() -> None:
             }
         }
         print(json.dumps(output))
-        sys.exit(0)
     else:
+        print(json.dumps({}))
         sys.exit(0)
-
 
 if __name__ == "__main__":
     main()
