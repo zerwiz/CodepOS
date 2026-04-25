@@ -291,7 +291,6 @@ export default function (pi: ExtensionAPI): void {
           return { message: `Theme not found: ${args.themeName}` };
         }
         currentThemeIndex = THEMES.findIndex((t) => t.name === args.themeName);
-        pi.notify(`Applied theme: ${found.name}`, "success");
         return { message: `Applied theme: ${found.name}` };
       }
 
@@ -305,7 +304,6 @@ export default function (pi: ExtensionAPI): void {
       }
 
       const theme = getCurrentTheme();
-      pi.notify(`Theme: ${theme.name}`, "info");
       return { message: `Switched to theme: ${theme.name}` };
     },
   });
@@ -375,16 +373,12 @@ export default function (pi: ExtensionAPI): void {
 
   pi.on("session_start", async () => {
     currentThemeIndex = 2;
-    const theme = getCurrentTheme();
-    pi.notify(`CodepOS Theme: ${theme.name}`, "info");
   });
 
   pi.registerShortcut("ctrl+'", {
     description: "Next theme",
     handler: async () => {
       currentThemeIndex = (currentThemeIndex + 1) % THEMES.length;
-      const theme = getCurrentTheme();
-      pi.notify(`Theme: ${theme.name}`, "info");
     },
   });
 
@@ -392,8 +386,6 @@ export default function (pi: ExtensionAPI): void {
     description: "Previous theme",
     handler: async () => {
       currentThemeIndex = (currentThemeIndex - 1 + THEMES.length) % THEMES.length;
-      const theme = getCurrentTheme();
-      pi.notify(`Theme: ${theme.name}`, "info");
     },
   });
 }

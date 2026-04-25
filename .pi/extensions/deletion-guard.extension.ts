@@ -7,8 +7,8 @@ function isProtected(path: string): boolean {
 }
 
 export default function (pi: ExtensionAPI) {
-  pi.on("session_start", async () => {
-    pi.notify("Deletion guard active", "info");
+  pi.on("session_start", async (event: any, ctx: any) => {
+    if (ctx?.hasUI) ctx.ui.notify("Deletion guard active", "info");
   });
 
   pi.registerTool({
